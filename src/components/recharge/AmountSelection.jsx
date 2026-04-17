@@ -9,14 +9,14 @@ const GiftIcon = () => (
   </svg>
 );
 const amounts = [
-  { value: 5, label: "M5", description: "Quick Top-up" },
-  { value: 10, label: "M10", description: "Basic" },
-  { value: 20, label: "M20", description: "Standard" },
-  { value: 30, label: "M30", description: "Plus" },
-  { value: 50, label: "M50", description: "Value" },
-  { value: 100, label: "M100", description: "Premium" },
-  { value: 200, label: "M200", description: "Power" },
-  { value: 500, label: "M500", description: "Max" },
+  { value: 5, label: "ZK5", description: "Quick Top-up" },
+  { value: 10, label: "ZK10", description: "Basic" },
+  { value: 20, label: "ZK20", description: "Standard" },
+  { value: 30, label: "ZK30", description: "Plus" },
+  { value: 50, label: "ZK50", description: "Value" },
+  { value: 100, label: "ZK100", description: "Premium" },
+  { value: 200, label: "ZK200", description: "Power" },
+  { value: 500, label: "ZK500", description: "Max" },
 ];
 
 export default function AmountSelection({ selectedAmount, customAmount, onAmountSelect, onCustomAmountChange }) {
@@ -87,9 +87,7 @@ export default function AmountSelection({ selectedAmount, customAmount, onAmount
         </label>
         
         <div className="relative">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">
-            M
-          </span>
+       
           <input
             type="number"
             value={customAmount}
