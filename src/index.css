@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: 'MTNBrighterSans';
+  src: url('/fonts/MTNBrighterSans-Regular.woff2') format('woff2');
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'MTNBrighterSans';
+  src: url('/fonts/MTNBrighterSans-Light.woff2') format('woff2');
+  font-weight: 300; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'MTNBrighterSans';
+  src: url('/fonts/MTNBrighterSans-Medium.woff2') format('woff2');
+  font-weight: 500; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'MTNBrighterSans';
+  src: url('/fonts/MTNBrighterSans-Bold.woff2') format('woff2');
+  font-weight: 700; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'MTNBrighterSans';
+  src: url('/fonts/MTNBrighterSans-ExtraBold.woff2') format('woff2');
+  font-weight: 800; font-style: normal; font-display: swap;
+}
+
+@theme {
+  --font-sans: 'MTNBrighterSans', Arial, sans-serif;
+
+  --color-mtn-yellow: #FFCC00;
+  --color-mtn-black: #000000;
+  --color-mtn-dark: #1A1A1A;
+}
