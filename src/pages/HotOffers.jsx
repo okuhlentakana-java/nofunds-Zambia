@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import PaymentModal from "../components/universal/PaymentModal";
 import { useBundlesByCategory } from "../hooks/useBundles";
-
+import { useTangazoAd } from "../hooks/useTangazoAd";
 // ── Icons ────────────────────────────────────────────────────────────────────
 const BoltIcon = ({ size = 16, color = "#001A70" }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color}
@@ -48,6 +48,7 @@ function parsePrice(priceStr = "") {
 
 // ── Main Component ───────────────────────────────────────────────────────────
 export default function HotOffers() {
+    useTangazoAd("primary_banner");
   const navigate = useNavigate();
   const [paymentBundle, setPaymentBundle] = useState(null);
 
@@ -84,33 +85,12 @@ export default function HotOffers() {
       <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
         {/* ── Hero Banner ─────────────────────────────────────────────────── */}
-        <div className="relative overflow-hidden rounded-2xl bg-mtn-black p-5 mb-6 text-white">
-          <div className="absolute -top-5 right-5 opacity-10">
-            <svg width="100" height="100" viewBox="0 0 100 100">
-              <polygon points="50 5 95 95 5 95" fill="white" />
-            </svg>
-          </div>
-
-          <div className="flex items-center gap-2 mb-2">
-            <GiftIcon />
-            <span className="text-[11px] font-bold tracking-wider text-mtn-yellow uppercase">
-              Featured Promotion
-            </span>
-          </div>
-
-          <h2 className="text-2xl font-extrabold mb-2">Hoa Khonahala</h2>
-
-          <p className="text-sm text-white/80 mb-4">
-            Recharge M5 or more for a chance to win a brand new car, shopping vouchers, and airtime prizes.
-          </p>
-
-          <button
-            onClick={() => navigate("/recharge")}
-            className="bg-mtn-yellow text-mtn-black px-5 py-2 rounded-full text-sm font-bold hover:bg-mtn-black hover:text-white transition"
-          >
-            Recharge Now →
-          </button>
-        </div>
+         <div className="rounded-2xl overflow-hidden mb-6">
+        <div
+          data-tangazo-zone="primary_banner"
+          style={{ display: "block", width: "100%", minHeight: "180px" }}
+        />
+      </div>
 
         {/* ── Best Value Deals ─────────────────────────────────────────────── */}
         <SectionLabel>Best Value Deals</SectionLabel>

@@ -5,22 +5,20 @@ import { BACKEND_URL } from "../../api/index";
 
 const ZAMBIA = { code: "ZM", dial: "+260" };
 const MAX_PHONE_DIGITS = 9;
-
-// MTN Zambia prefixes
 const MTN_PREFIXES = ["095", "096", "097", "076"];
 
 const paymentMethods = [
   {
-    id: "ecocash",
-    label: "EcoCash",
-    desc: "Pay from mobile wallet",
+    id: "momo",
+    label: "MTN MoMo",
+    desc: "Pay from MTN Mobile Money",
     icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2">
         <rect x="5" y="2" width="14" height="20" rx="2" />
         <line x1="12" y1="18" x2="12.01" y2="18" />
       </svg>
     ),
-    bg: "#16a34a",
+    bg: "#FFCC00",
   },
   {
     id: "card",
@@ -38,7 +36,6 @@ function parseAmount(priceStr) {
 
 function formatPrice(priceStr) {
   if (!priceStr) return "";
-  // Replace 'M' (case‑insensitive, optional spaces) with 'ZK'
   return priceStr.replace(/M\s*/i, "ZK");
 }
 
@@ -53,33 +50,36 @@ function loadPayFastEngine() {
 }
 
 export default function PaymentModal({ isOpen, onClose, item, onSuccess }) {
-  const [method, setMethod] = useState("ecocash");
+  const [method, setMethod]         = useState("momo");
   const [methodOpen, setMethodOpen] = useState(false);
   const [localPhone, setLocalPhone] = useState("");
-  const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState("");
+  const [email, setEmail]           = useState("");
+  const [loading, setLoading]       = useState(false);
+  const [success, setSuccess]       = useState(false);
+  const [error, setError]           = useState("");
 
   if ((!isOpen && !success && !error) || !item) return null;
 
-  const selected = paymentMethods.find((m) => m.id === method);
-  const isMobile = method === "ecocash";
-  const isCard = method === "card";
+  const selected    = paymentMethods.find((m) => m.id === method);
+  const isMomo      = method === "momo";
+  const isCard      = method === "card";
   const localDigits = localPhone.replace(/\D/g, "");
 
   const buildFullPhone = (raw) => `${ZAMBIA.dial}${raw.replace(/\D/g, "")}`;
 
   const isValidMTNNumber = (digits) => {
     if (digits.length !== MAX_PHONE_DIGITS) return false;
-    const prefix = digits.slice(0, 3);
-    return MTN_PREFIXES.includes(prefix);
+    return MTN_PREFIXES.includes(digits.slice(0, 3));
   };
 
-  const canSubmit = () => isValidMTNNumber(localDigits);
+  const canSubmit = () => {
+    if (isMomo) return isValidMTNNumber(localDigits);
+    // Card: just need a phone number entered (for receipt/reference)
+    return localDigits.length >= 7;
+  };
 
   const handlePhoneChange = (e) => {
-    const raw = e.target.value.replace(/[^\d\s-]/g, "");
+    const raw    = e.target.value.replace(/[^\d\s-]/g, "");
     const digits = raw.replace(/\D/g, "");
     if (digits.length > MAX_PHONE_DIGITS) return;
     setLocalPhone(raw);
@@ -96,12 +96,15 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }) {
         await loadPayFastEngine();
         const res = await fetch(`${BACKEND_URL}/api/payment/initiate`, {
           method: "POST",
-          headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
+          headers: {
+            "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true",
+          },
           body: JSON.stringify({
             itemName: item.name,
-            amount: parseAmount(item.price),
-            phone: fullPhone,
-            email: email.trim() || undefined,
+            amount:   parseAmount(item.price),
+            phone:    fullPhone,
+            email:    email.trim() || undefined,
           }),
         });
         if (!res.ok) throw new Error("Server error — could not initiate payment.");
@@ -121,7 +124,7 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }) {
           }
         });
       } else {
-        // Simulate mobile money (EcoCash) payment
+        // MTN MoMo — simulate for now, wire to your MoMo API when ready
         await new Promise((r) => setTimeout(r, 1300));
         setLoading(false);
         setSuccess(true);
@@ -133,7 +136,7 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }) {
   };
 
   const handleClose = () => {
-    setMethod("ecocash");
+    setMethod("momo");
     setMethodOpen(false);
     setLocalPhone("");
     setEmail("");
@@ -146,7 +149,8 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-xl">
-        {/* SUCCESS */}
+
+        {/* ── SUCCESS ── */}
         {success && (
           <div className="p-6 text-center">
             <div className="w-16 h-16 bg-mtn-yellow rounded-full flex items-center justify-center mx-auto mb-4">
@@ -159,10 +163,10 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }) {
 
             <div className="bg-gray-50 rounded-xl p-4 text-left mb-5 space-y-2">
               {[
-                ["Bundle", item.name],
+                ["Bundle",      item.name],
                 ["Amount Paid", formatPrice(item.price)],
-                ["Method", selected?.label],
-                ["Phone", buildFullPhone(localPhone)],
+                ["Method",      selected?.label],
+                ["Phone",       buildFullPhone(localPhone)],
               ].map(([label, val]) => (
                 <div key={label} className="flex justify-between">
                   <span className="text-gray-400 text-sm">{label}</span>
@@ -172,10 +176,7 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }) {
             </div>
 
             <button
-              onClick={() => {
-                if (onSuccess) onSuccess();
-                handleClose();
-              }}
+              onClick={() => { if (onSuccess) onSuccess(); handleClose(); }}
               className="w-full py-3 bg-mtn-yellow text-mtn-black rounded-xl font-bold hover:bg-mtn-black hover:text-mtn-yellow transition"
             >
               Done
@@ -183,7 +184,7 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }) {
           </div>
         )}
 
-        {/* ERROR */}
+        {/* ── ERROR ── */}
         {error && !success && (
           <div className="p-6 text-center">
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -212,9 +213,10 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }) {
           </div>
         )}
 
-        {/* PAYMENT FORM */}
+        {/* ── PAYMENT FORM ── */}
         {!success && !error && (
           <div className="p-5">
+
             {/* Header */}
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-bold text-mtn-black">Payment</h2>
@@ -235,19 +237,24 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }) {
                 </div>
                 <p className="font-extrabold text-mtn-yellow">{formatPrice(item.price)}</p>
               </div>
-              {item.description && <p className="text-xs text-white/40 mt-2">{item.description}</p>}
+              {item.description && (
+                <p className="text-xs text-white/40 mt-2">{item.description}</p>
+              )}
             </div>
 
-            {/* Payment method label */}
-            <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-1">Payment Method</p>
-
-            {/* Method dropdown */}
+            {/* Payment method */}
+            <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-1">
+              Payment Method
+            </p>
             <div className="relative mb-5">
               <button
                 onClick={() => setMethodOpen(!methodOpen)}
                 className="w-full flex items-center gap-3 p-3 border border-gray-200 rounded-xl bg-white hover:border-mtn-yellow transition"
               >
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: selected?.bg }}>
+                <div
+                  className="w-8 h-8 rounded-lg flex items-center justify-center"
+                  style={{ background: selected?.bg }}
+                >
                   {selected?.icon}
                 </div>
                 <div className="flex-1 text-left">
@@ -256,9 +263,7 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }) {
                 </div>
                 <svg
                   className={`w-4 h-4 text-gray-400 transition-transform ${methodOpen ? "rotate-180" : ""}`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+                  fill="none" stroke="currentColor" viewBox="0 0 24 24"
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
                 </svg>
@@ -280,7 +285,10 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }) {
                         method === m.id ? "bg-mtn-yellow/10" : "hover:bg-gray-50"
                       }`}
                     >
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: m.bg }}>
+                      <div
+                        className="w-8 h-8 rounded-lg flex items-center justify-center"
+                        style={{ background: m.bg }}
+                      >
                         {m.icon}
                       </div>
                       <div className="flex-1 text-left">
@@ -298,9 +306,9 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }) {
               )}
             </div>
 
-            {/* Phone number */}
+            {/* Phone */}
             <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-1">
-              {isMobile ? "Mobile Money Number (MTN)" : "Mobile Number"}
+              {isMomo ? "MTN MoMo Number" : "Mobile Number"}
             </p>
             <input
               type="tel"
@@ -314,20 +322,23 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }) {
             {localDigits.length > 0 && (
               <p className="text-xs text-gray-400 mb-1">
                 Full number:{" "}
-                <span className="font-bold text-mtn-black font-mono">{buildFullPhone(localPhone)}</span>
+                <span className="font-bold text-mtn-black font-mono">
+                  {buildFullPhone(localPhone)}
+                </span>
               </p>
             )}
-            {localDigits.length === MAX_PHONE_DIGITS && !isValidMTNNumber(localDigits) && (
-              <p className="text-xs text-red-500 mt-1">
-                Please enter a valid MTN Zambia number (starting with 095, 096, 097, or 076).
+            {isMomo && localDigits.length === MAX_PHONE_DIGITS && !isValidMTNNumber(localDigits) && (
+              <p className="text-xs text-red-500 mt-1 mb-1">
+                Please enter a valid MTN Zambia number (095, 096, 097, or 076).
               </p>
             )}
 
-            {/* Email – card only */}
+            {/* Email — card only */}
             {isCard && (
               <>
                 <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-1 mt-3">
-                  Email Address <span className="font-normal normal-case text-gray-400">(optional)</span>
+                  Email Address{" "}
+                  <span className="font-normal normal-case text-gray-400">(optional)</span>
                 </p>
                 <input
                   type="email"
@@ -340,12 +351,8 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }) {
                 />
                 <div className="bg-mtn-yellow/10 border border-mtn-yellow/30 rounded-xl p-3 mb-2 flex items-start gap-2">
                   <svg className="w-4 h-4 text-mtn-black mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20A10 10 0 0012 2z"
-                    />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                      d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20A10 10 0 0012 2z" />
                   </svg>
                   <p className="text-xs text-mtn-black">
                     {email.trim()
@@ -357,43 +364,42 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }) {
             )}
 
             <p className="text-xs text-gray-400 mb-4">
-              {isMobile
-                ? "A payment prompt will be sent to this MTN Zambia number."
+              {isMomo
+                ? "A payment prompt will be sent to your MTN MoMo number."
                 : "Complete your card payment in the secure overlay."}
             </p>
 
             {/* Total */}
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex justify-between items-center mb-4 pt-3 border-t border-gray-100">
               <span className="text-gray-400 font-medium">Total</span>
               <span className="text-xl font-extrabold text-mtn-black">{formatPrice(item.price)}</span>
             </div>
 
-            {/* Confirm button */}
+            {/* Confirm */}
             <button
               onClick={handleConfirm}
               disabled={!canSubmit() || loading}
               className={`w-full py-3 rounded-xl font-bold transition ${
                 canSubmit() && !loading
-                  ? "bg-mtn-yellow text-mtn-black hover:bg-mtn-black hover:text-white"
+                  ? "bg-mtn-yellow text-mtn-black hover:bg-mtn-black hover:text-mtn-yellow"
                   : "bg-gray-100 text-gray-400 cursor-not-allowed"
               }`}
             >
-              {loading ? (isCard ? "Loading PayFast..." : "Processing...") : isCard ? "Pay with Card →" : "Confirm Purchase"}
+              {loading
+                ? (isCard ? "Loading PayFast..." : "Processing...")
+                : (isCard ? "Pay with Card →" : "Confirm Purchase")}
             </button>
 
             {isCard && (
               <p className="text-center text-xs text-gray-400 mt-3 flex items-center justify-center gap-1">
                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M12 11c0-1.1.9-2 2-2s2 .9 2 2v2H10v-2c0-1.1.9-2 2-2zm-6 9V10a6 6 0 1112 0v10H6z"
-                  />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                    d="M12 11c0-1.1.9-2 2-2s2 .9 2 2v2H10v-2c0-1.1.9-2 2-2zm-6 9V10a6 6 0 1112 0v10H6z" />
                 </svg>
                 Secured by PayFast · PCI DSS Compliant
               </p>
             )}
+
           </div>
         )}
       </div>

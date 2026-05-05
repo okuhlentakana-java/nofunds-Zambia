@@ -1,5 +1,5 @@
 import { FaArrowRight } from "react-icons/fa";
-import PromoBanner from "../home/PromoBanner";
+import { useTangazoAd } from "../../hooks/useTangazoAd";
 const GiftIcon = () => (
 
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#facc15" strokeWidth="2">
@@ -20,6 +20,7 @@ const amounts = [
 ];
 
 export default function AmountSelection({ selectedAmount, customAmount, onAmountSelect, onCustomAmountChange }) {
+  useTangazoAd("primary_banner");
   const handleCustomAmountChange = (e) => {
     const value = e.target.value;
     if (value === "" || /^\d*\.?\d*$/.test(value)) {
@@ -30,28 +31,12 @@ export default function AmountSelection({ selectedAmount, customAmount, onAmount
   return (
     <div className="space-y-6">
       {/* Hero Banner */}
- <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-mtn-black via-mtn-black to-mtn-black p-5 mb-6 text-white">
-          <div className="absolute -top-5 right-5 opacity-10">
-            <svg width="100" height="100" viewBox="0 0 100 100">
-              <polygon points="50 5 95 95 5 95" fill="white" />
-            </svg>
-          </div>
-
-          <div className="flex items-center gap-2 mb-2">
-            <GiftIcon />
-            <span className="text-[11px] font-bold tracking-wider text-mtn-yellow uppercase">
-              Featured Promotion
-            </span>
-          </div>
-
-          <h2 className="text-2xl font-extrabold mb-2">Hoa Khonahala</h2>
-
-          <p className="text-sm text-mtn-white mb-4">
-            Recharge M5 or more for a chance to win a brand new car, shopping vouchers, and airtime prizes.
-          </p>
-
-         
-        </div>
+      <div className="rounded-2xl overflow-hidden mb-6">
+        <div
+          data-tangazo-zone="primary_banner"
+          style={{ display: "block", width: "100%", minHeight: "180px" }}
+        />
+      </div>
   
 
      <div>

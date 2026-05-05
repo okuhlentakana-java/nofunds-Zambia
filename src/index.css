@@ -33,3 +33,10 @@
   --color-mtn-black: #000000;
   --color-mtn-dark: #1A1A1A;
 }
+
+[data-tangazo-zone="slim_strip"] img {
+  width: 100% !important;
+  height: 50px !important;
+  display: block !important;
+  object-fit: cover !important;
+}
