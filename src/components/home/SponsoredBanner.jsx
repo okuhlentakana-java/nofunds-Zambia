@@ -1,15 +1,33 @@
 import { useTangazoAd } from "../../hooks/useTangazoAd";
 
 export default function SponsoredBanner() {
-  useTangazoAd("primary_banner");
+  const { isEmpty } = useTangazoAd("secondary_banner");
 
   return (
-    <div className="mx-4 mt-3">
-      <div className="rounded-2xl overflow-hidden">
-        <div
-          data-tangazo-zone="primary_banner"
-          style={{ display: "block", width: "100%", minHeight: "180px" }}
-        />
+    <div className="w-full mt-4 px-4">
+      <div className="rounded-2xl overflow-hidden max-w-screen-sm mx-auto">
+        {isEmpty ? (
+          
+          <img
+            src="/mtn-fibre-sticky-1280x160 2.jpg"
+            alt="MTN Promo"
+            className="w-full h-auto block"
+            style={{
+              aspectRatio: "728 / 90",
+              objectFit: "contain",
+            }}
+          />
+        ) : (
+          <div
+            data-tangazo-zone="secondary_banner"
+            style={{
+              display: "block",
+              width: "100%",
+              aspectRatio: "728 / 90",
+              minHeight: "90px",
+            }}
+          />
+        )}
       </div>
     </div>
   );

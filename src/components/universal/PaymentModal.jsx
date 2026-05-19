@@ -123,12 +123,26 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }) {
             );
           }
         });
-      } else {
-        // MTN MoMo — simulate for now, wire to your MoMo API when ready
-        await new Promise((r) => setTimeout(r, 1300));
-        setLoading(false);
-        setSuccess(true);
-      }
+     // Replace the simulate block in handleConfirm:
+          } else {
+            // MTN MoMo
+            const res = await fetch(`${BACKEND_URL}/api/payment/momo`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                itemName: item.name,
+                amount:   parseAmount(item.price),
+                phone:    fullPhone,
+              }),
+            });
+
+            if (!res.ok) throw new Error("Payment failed. Please try again.");
+            const data = await res.json();
+            if (data.status !== "success") throw new Error("Payment was not completed.");
+
+            setLoading(false);
+            setSuccess(true);
+          }
     } catch (err) {
       setLoading(false);
       setError(err.message || "Something went wrong. Please try again.");

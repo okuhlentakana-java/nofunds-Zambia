@@ -6,19 +6,19 @@ import { useNavigate } from "react-router-dom";
 
 const services = [
   {
-    name: "Sasai",
+    name: "MTN Ayoba",
     icon: <CiStar />,
     description: "All-in-one super app for chat, pay, stream and connect.",
     route: "/services",
   },
   {
-    name: "EcoCash Spache Fono",
+    name: "MTN MoMo",
     icon: <LiaMoneyBillSolid />,
     description: "Mobile money for payments, transfers, and financial services.",
     route: "/services",
   },
   {
-    name: "EcoSure Rebolokehile",
+    name: "MTN Insurance",
     icon: <LuShield />,
     description: "Affordable mobile insurance for you and your family.",
     route: "/services",
@@ -40,14 +40,13 @@ export default function Services() {
         <h2 className="font-semibold text-gray-800 text-base">Popular Services</h2>
         <button
           onClick={() => navigate("/services")}
-          className="flex items-center gap-1 text-yellow-400 text-sm font-medium  text-mtn-black hover: hover:text-mtn-black "
+          className="flex items-center gap-1 text-yellow-400 text-sm font-medium hover:text-mtn-black"
         >
           View All <FaArrowRight size={11} />
         </button>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        {/* Service Cards */}
         {services.map((service, i) => (
           <div
             key={i}
@@ -60,7 +59,6 @@ export default function Services() {
           </div>
         ))}
 
-        {/* Advertise With Us Card */}
         <div
           onClick={() => navigate("/ads")}
           className="bg-gradient-to-br from-mtn-yellow to-mtn-yellow rounded-2xl p-4 flex flex-col items-start shadow-sm hover:shadow-md active:scale-95 transition-all cursor-pointer col-span-2"
@@ -77,7 +75,7 @@ export default function Services() {
           <p className="text-xs text-mtn-black mt-1 leading-relaxed">
             Reach thousands of active ETL users. Place your brand where it matters.
           </p>
-          <div className="flex items-center gap-1 mt-3 text-mtn-blacktext-xs font-semibold">
+          <div className="flex items-center gap-1 mt-3 text-mtn-black text-xs font-semibold">
             Get Started <FaArrowRight size={10} />
           </div>
         </div>

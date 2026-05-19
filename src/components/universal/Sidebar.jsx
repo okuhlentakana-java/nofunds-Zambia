@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { useLocation, useNavigate,Link } from "react-router-dom"; // Swapped Link for useNavigate
 import { BsPhone } from "react-icons/bs";
 import { CiWifiOn, CiHome } from "react-icons/ci";
 import { LuHandCoins } from "react-icons/lu";
@@ -47,12 +47,20 @@ const navLinks = [
 
 export default function Sidebar({ open, onClose }) {
   const location = useLocation();
+  const navigate = useNavigate(); // Initialize the navigate hook
 
   const isActive = (path) => {
-    if (path === "/") return location.pathname === "/";
+    if (path === "/") {
+      return location.pathname === "/";
+    }
     return location.pathname.startsWith(path);
   };
 
+  // Programmatic navigation handler
+  const handleNavigation = (path) => {
+    navigate(path);
+    onClose(); // Close the sidebar after navigating
+  };
   return (
     <>
       {/* Backdrop */}
@@ -98,18 +106,17 @@ export default function Sidebar({ open, onClose }) {
                   const active = isActive(link.to);
 
                   return (
-                    <Link
+                    <button
                       key={link.label}
-                      to={link.to}
-                      onClick={onClose}
-                      className={`flex items-center gap-4 px-3 py-2 rounded-lg transition ${
+                      onClick={() => handleNavigation(link.to)}
+                      className={`w-full flex items-center gap-4 px-3 py-2 rounded-lg transition text-left ${
                         active
                           ? "bg-mtn-yellow text-mtn-black"
                           : "text-gray-700  hover:bg-mtn-black hover:text-white "
                       }`}
                     >
                       <span
-                        className={`text-lg ${
+                        className={`text-lg transition${
                           active ? "text-mtn-black" : "text-gray-500"
                         }`}
                       >
@@ -119,7 +126,7 @@ export default function Sidebar({ open, onClose }) {
                       <span className="text-sm font-medium">
                         {link.label}
                       </span>
-                    </Link>
+                    </button>
                   );
                 })}
               </div>

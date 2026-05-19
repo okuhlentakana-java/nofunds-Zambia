@@ -1,7 +1,7 @@
 import { RiWifiOffLine } from "react-icons/ri";
 export default function Banner() {
   return (
-    <div className="relative mx-4 mt-3 p-4 rounded-2xl bg-mtn-yellow overflow-hidden">
+    <div className="relative mx-3 mt-2 py-1.5 px-3 rounded-xl text-white overflow-hidden bg-mtn-yellow  ">
         {/* Wave pattern background */}
       <svg
         className="absolute inset-0 w-full h-full pointer-events-none"
@@ -59,7 +59,7 @@ export default function Banner() {
           <h2 className="font-bold text-lg text-mtn-black leading-tight">
             You're out of data
           </h2>
-          <p className="text-sm text-mtn-black/70">
+          <p className="text-[10px] text-mtn-black/70">
             Recharge, buy a bundle, or borrow to stay connected.
           </p>
         </div>

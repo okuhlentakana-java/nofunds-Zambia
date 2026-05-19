@@ -48,7 +48,7 @@ function parsePrice(priceStr = "") {
 
 // ── Main Component ───────────────────────────────────────────────────────────
 export default function HotOffers() {
-    useTangazoAd("primary_banner");
+    const { isEmpty } = useTangazoAd("primary_banner");
   const navigate = useNavigate();
   const [paymentBundle, setPaymentBundle] = useState(null);
 
@@ -84,12 +84,20 @@ export default function HotOffers() {
     <div className="bg-gray-100 min-h-screen font-sans">
       <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
-        {/* ── Hero Banner ─────────────────────────────────────────────────── */}
-         <div className="rounded-2xl overflow-hidden mb-6">
-        <div
-          data-tangazo-zone="primary_banner"
-          style={{ display: "block", width: "100%", minHeight: "180px" }}
-        />
+           {/* Hero Banner — max width + height constrained */}
+      <div className="rounded-2xl overflow-hidden mb-6 max-w-screen-sm mx-auto">
+        {isEmpty ? (
+          <img
+            src="/mtn-fibre-inline-1080x360 2.jpg"
+            alt="MTN Promo"
+            className="w-full h-auto block"
+          />
+        ) : (
+          <div
+            data-tangazo-zone="primary_banner"
+            style={{ display: "block", width: "100%", minHeight: "180px" }}
+          />
+        )}
       </div>
 
         {/* ── Best Value Deals ─────────────────────────────────────────────── */}
