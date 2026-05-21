@@ -1,38 +1,46 @@
 import { FaArrowRight } from "react-icons/fa";
-import { CiStar } from "react-icons/ci";
-import { LuShield, LuMegaphone } from "react-icons/lu";
-import { LiaMoneyBillSolid } from "react-icons/lia";
+import { LuGamepad2, LuTv, LuMegaphone, LuMusic } from "react-icons/lu";
+import { MdOutlineSportsEsports } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 
 const services = [
   {
-    name: "MTN Ayoba",
-    icon: <CiStar />,
-    description: "All-in-one super app for chat, pay, stream and connect.",
-    route: "/services",
+    name: "Swipe & Win",
+    icon: <MdOutlineSportsEsports />,
+    description: "Swipe for a chance to win K5,000 in prizes daily.",
+    url: "http://mtnzmb.swipe4win.com",
   },
   {
-    name: "MTN MoMo",
-    icon: <LiaMoneyBillSolid />,
-    description: "Mobile money for payments, transfers, and financial services.",
-    route: "/services",
+    name: "MTN TV",
+    icon: <LuTv />,
+    description: "Stream live TV and on-demand content on your phone.",
+    url: "https://onetv1.mtn.com/",
   },
   {
-    name: "MTN Insurance",
-    icon: <LuShield />,
-    description: "Affordable mobile insurance for you and your family.",
-    route: "/services",
+    name: "Callertunes",
+    icon: <LuMusic />,
+    description: "Set your favourite song as your caller tune via *560#.",
+    url: null, // USSD — no web URL
+    ussd: "*560#",
   },
   {
-    name: "Next Best Offer",
-    icon: <CiStar />,
-    description: "Personalised bundle recommendations based on your usage.",
-    route: "/services",
+    name: "Games",
+    icon: <LuGamepad2 />,
+    description: "MobiBattle, Xgames, Challenges Arena and more.",
+    url: "http://mtnzmb.livexgames.com",
   },
 ];
 
 export default function Services() {
   const navigate = useNavigate();
+
+  const handleServiceClick = (service) => {
+    if (service.url) {
+      window.open(service.url, "_blank", "noopener,noreferrer");
+    } else if (service.ussd) {
+      window.open(`tel:${service.ussd}`);
+    }
+  };
 
   return (
     <div className="px-4 mt-3">
@@ -50,7 +58,7 @@ export default function Services() {
         {services.map((service, i) => (
           <div
             key={i}
-            onClick={() => navigate(service.route)}
+            onClick={() => handleServiceClick(service)}
             className="bg-white rounded-2xl p-4 flex flex-col items-start shadow-sm hover:shadow-md active:scale-95 transition-all cursor-pointer"
           >
             <div className="text-2xl mb-2 text-yellow-400">{service.icon}</div>
@@ -73,7 +81,7 @@ export default function Services() {
           </div>
           <p className="font-bold text-mtn-black text-sm mt-3">Advertise With Us</p>
           <p className="text-xs text-mtn-black mt-1 leading-relaxed">
-            Reach thousands of active ETL users. Place your brand where it matters.
+            Reach thousands of active MTN users. Place your brand where it matters.
           </p>
           <div className="flex items-center gap-1 mt-3 text-mtn-black text-xs font-semibold">
             Get Started <FaArrowRight size={10} />

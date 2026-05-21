@@ -9,23 +9,13 @@ export default function SponsoredBanner() {
         {isEmpty ? (
           
           <img
-            src="/mtn-fibre-sticky-1280x160 2.jpg"
+            src="/nofunds-adzone-internal-300x100 2.jpg"
             alt="MTN Promo"
             className="w-full h-auto block"
-            style={{
-              aspectRatio: "728 / 90",
-              objectFit: "contain",
-            }}
           />
         ) : (
           <div
             data-tangazo-zone="secondary_banner"
-            style={{
-              display: "block",
-              width: "100%",
-              aspectRatio: "728 / 90",
-              minHeight: "90px",
-            }}
           />
         )}
       </div>

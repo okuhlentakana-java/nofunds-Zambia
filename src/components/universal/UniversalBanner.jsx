@@ -27,15 +27,13 @@ export default function UniversalBanner() {
       <div className="w-full max-w-2xl rounded-xl overflow-hidden shadow-md bg-gray-100">
         {isEmpty ? (
           <img
-            src="/mtn-fibre-inline-1080x360 2.jpg"
+            src="/nofunds-adzone-protea-320x50 2.jpg"
             alt="MTN Promo"
             className="w-full block"
-            style={{ height: `${AD_HEIGHT}px`, objectFit: "cover", objectPosition: "center center" }}
           />
         ) : (
           <div
             data-tangazo-zone={ZONE}
-            style={{ display: "block", width: "100%", minHeight: `${AD_HEIGHT}px` }}
           />
         )}
         <div className="h-0.5 bg-gray-300">

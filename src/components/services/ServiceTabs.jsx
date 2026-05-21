@@ -1,9 +1,9 @@
 const tabs = [
   { id: "all", label: "All Services" },
+  { id: "games", label: "Games" },
+  { id: "video", label: "Video" },
   { id: "digital", label: "Digital" },
-  { id: "finance", label: "Finance" },
   { id: "lifestyle", label: "Lifestyle" },
-  { id: "content", label: "Content" },
 ];
 
 export default function ServiceTabs({ activeTab, onTabChange }) {
