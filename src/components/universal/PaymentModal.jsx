@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { FaTimes } from "react-icons/fa";
 import { CiCreditCard1 } from "react-icons/ci";
-import { BACKEND_URL } from "../../api/index";
+import { BACKEND_URL, BASE_URL } from "../../api/index"; // ✅ single import line
 
 const ZAMBIA = { code: "ZM", dial: "+260" };
 const MAX_PHONE_DIGITS = 9;
-const MTN_PREFIXES = ["095", "096", "097", "076"];
+const MTN_PREFIXES_2 = ["95", "96", "97", "76"]; // digits entered without leading 0
 
 const paymentMethods = [
   {
@@ -69,12 +69,11 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }) {
 
   const isValidMTNNumber = (digits) => {
     if (digits.length !== MAX_PHONE_DIGITS) return false;
-    return MTN_PREFIXES.includes(digits.slice(0, 3));
+    return MTN_PREFIXES_2.includes(digits.slice(0, 2));
   };
 
   const canSubmit = () => {
     if (isMomo) return isValidMTNNumber(localDigits);
-    // Card: just need a phone number entered (for receipt/reference)
     return localDigits.length >= 7;
   };
 
@@ -101,10 +100,11 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }) {
             "ngrok-skip-browser-warning": "true",
           },
           body: JSON.stringify({
-            itemName: item.name,
-            amount:   parseAmount(item.price),
-            phone:    fullPhone,
-            email:    email.trim() || undefined,
+            itemName:   item.name,
+            amount:     parseAmount(item.price),
+            phone:      fullPhone,
+            email:      email.trim() || undefined,
+            bundleCode: item.code, // stored on Payment entity → used by ITN to trigger recharge
           }),
         });
         if (!res.ok) throw new Error("Server error — could not initiate payment.");
@@ -123,26 +123,29 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }) {
             );
           }
         });
-     // Replace the simulate block in handleConfirm:
-          } else {
-            // MTN MoMo
-            const res = await fetch(`${BACKEND_URL}/api/payment/momo`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                itemName: item.name,
-                amount:   parseAmount(item.price),
-                phone:    fullPhone,
-              }),
-            });
 
-            if (!res.ok) throw new Error("Payment failed. Please try again.");
-            const data = await res.json();
-            if (data.status !== "success") throw new Error("Payment was not completed.");
+      } else {
+        const res = await fetch(`${BASE_URL}/api/v1/recharges/bundles`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sponsor_phone_number:     fullPhone,
+            beneficiary_phone_number: fullPhone,              
+            // eslint-disable-next-line react-hooks/purity
+            reference:                `${Date.now()}-${localDigits}`, 
+            bundle_code:              item.code,
+            payment_method:           "momo",
+          }),
+        });
+        
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data.message || data.error || "Recharge failed. Please try again.");
+        }
 
-            setLoading(false);
-            setSuccess(true);
-          }
+        setLoading(false);
+        setSuccess(true);
+      }
     } catch (err) {
       setLoading(false);
       setError(err.message || "Something went wrong. Please try again.");
@@ -343,7 +346,7 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }) {
             )}
             {isMomo && localDigits.length === MAX_PHONE_DIGITS && !isValidMTNNumber(localDigits) && (
               <p className="text-xs text-red-500 mt-1 mb-1">
-                Please enter a valid MTN Zambia number (095, 096, 097, or 076).
+                Please enter a valid MTN Zambia number (076, 095, 096, or 097).
               </p>
             )}
 

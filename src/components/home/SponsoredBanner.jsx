@@ -9,7 +9,7 @@ export default function SponsoredBanner() {
         {isEmpty ? (
           
           <img
-            src="/nofunds-adzone-internal-300x100 2.jpg"
+            src="/mtn-fibre-inline-1080x360 2.jpg"
             alt="MTN Promo"
             className="w-full h-auto block"
           />

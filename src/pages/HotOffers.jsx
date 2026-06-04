@@ -77,6 +77,7 @@ export default function HotOffers() {
       description: bundle.description,
       price: bundle.price,
       validity: bundle.validity,
+      code: bundle.code, 
     });
   };
 
@@ -88,7 +89,7 @@ export default function HotOffers() {
       <div className="rounded-2xl overflow-hidden mb-6 max-w-screen-sm mx-auto">
         {isEmpty ? (
           <img
-            src="/nofunds-adzone-internal-300x250 3.jpg"
+            src="/mtn-fibre-inline-1080x360 2.jpg"
             alt="MTN Promo"
             className="w-full h-auto block"
           />

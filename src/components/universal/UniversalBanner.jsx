@@ -27,7 +27,7 @@ export default function UniversalBanner() {
       <div className="w-full max-w-2xl rounded-xl overflow-hidden shadow-md bg-gray-100">
         {isEmpty ? (
           <img
-            src="/nofunds-adzone-protea-320x50 2.jpg"
+            src="/mtn-fibre-sticky-1280x160 2.jpg"
             alt="MTN Promo"
             className="w-full block"
           />

@@ -8,7 +8,7 @@ export default function PromoBanner() {
       <div className="rounded-2xl overflow-hidden max-w-screen-sm mx-auto">
         {isEmpty ? (
           <img
-            src="/nofunds-adzone-internal-300x250 3.jpg"
+            src="/mtn-fibre-mpu-1080x500 2.jpg"
             alt="MTN Promo"
             className="w-full h-auto block"
           />

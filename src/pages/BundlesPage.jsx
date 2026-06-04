@@ -62,6 +62,7 @@ export default function BundlesPage() {
         description: selectedBundle.description,
         price: selectedBundle.price,
         validity: selectedBundle.validity,
+        code: selectedBundle.code, 
       }
     : null;
 
