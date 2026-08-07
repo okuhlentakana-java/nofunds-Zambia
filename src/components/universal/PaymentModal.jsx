@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { FaTimes } from "react-icons/fa";
-import { CiCreditCard1 } from "react-icons/ci";
-import { BACKEND_URL, BASE_URL } from "../../api/index"; // ✅ single import line
+import { BASE_URL } from "../../api/index";
 
 const ZAMBIA = { code: "ZM", dial: "+260" };
 const MAX_PHONE_DIGITS = 9;
-const MTN_PREFIXES_2 = ["95", "96", "97", "76"]; // digits entered without leading 0
+const MTN_PREFIXES_2 = ["95", "96", "97", "76"];
+const PENDING_TIMEOUT_SECONDS = 240; // 4 minutes
 
 const paymentMethods = [
   {
@@ -20,13 +20,6 @@ const paymentMethods = [
     ),
     bg: "#FFCC00",
   },
-  {
-    id: "card",
-    label: "Card (PayFast)",
-    desc: "Debit or credit card",
-    icon: <CiCreditCard1 className="w-5 h-5 text-white" />,
-    bg: "#000000",
-  },
 ];
 
 function parseAmount(priceStr) {
@@ -39,30 +32,88 @@ function formatPrice(priceStr) {
   return priceStr.replace(/M\s*/i, "ZK");
 }
 
-function loadPayFastEngine() {
-  return new Promise((resolve) => {
-    if (window.payfast_do_onsite_payment) return resolve();
-    const script = document.createElement("script");
-    script.src = "https://www.payfast.co.za/onsite/engine.js";
-    script.onload = resolve;
-    document.head.appendChild(script);
-  });
+function extractPendingMessage(data) {
+  const candidates = [data?.status, data?.message, data?.error];
+  for (const c of candidates) {
+    if (typeof c === "string" && c.toLowerCase().includes("pending")) {
+      return c;
+    }
+  }
+  return null;
+}
+
+async function checkPaymentStatus(reference) {
+  try {
+    const res = await fetch(`${BASE_URL}/sm-api/productManagement/v1/getTransactionStatus`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ reference }),
+    });
+    
+    const data = await res.json().catch(() => ({}));
+    
+    const status = (data?.status || "").toString().toLowerCase();
+    const code = data?.code || "";
+    
+    if (status === "success" || code === "0") {
+      return { done: true, ok: true, message: data?.message };
+    }
+    
+    if (status === "fail" || code === "2084" || code.startsWith("20")) {
+      return { 
+        done: true, 
+        ok: false, 
+        message: data?.message || data?.error || "Transaction failed" 
+      };
+    }
+    
+    if (status === "pending") {
+      return { done: false };
+    }
+    
+    return { done: false };
+  } catch (error) {
+    return { done: false };
+  }
+}
+
+// Infers the GA4 "type" param (data|voice|social|night|airtime) for the
+// purchase event. item.type is used if the caller supplied it; otherwise we
+// fall back to a guess based on whether the item has a bundle `code`.
+// TODO: BundlesPage/HotOffers/RechargePage currently don't pass an explicit
+// `type` on the item object they hand to this modal, so voice/social/night
+// bundles will all get misreported as "data" below. Recommend adding
+// `type: bundle.category` (or similar) at each call site instead of
+// inferring it here — flag with Comfort/Pelayo which value each bundle
+// category should map to in tab 6's allowed list.
+function inferPurchaseType(item) {
+  if (item.type) return item.type;
+  return item.code ? "data" : "airtime";
 }
 
 export default function PaymentModal({ isOpen, onClose, item, onSuccess }) {
-  const [method, setMethod]         = useState("momo");
+  const [method, setMethod] = useState("momo");
   const [methodOpen, setMethodOpen] = useState(false);
   const [localPhone, setLocalPhone] = useState("");
-  const [email, setEmail]           = useState("");
-  const [loading, setLoading]       = useState(false);
-  const [success, setSuccess]       = useState(false);
-  const [error, setError]           = useState("");
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState("");
+  const [pending, setPending] = useState(false);
+  const [pendingMessage, setPendingMessage] = useState("");
+  const [reference, setReference] = useState("");
+  const [timeRemaining, setTimeRemaining] = useState(PENDING_TIMEOUT_SECONDS);
+  const [timeoutExpired, setTimeoutExpired] = useState(false);
+  const pollRef = useRef(null);
+  const timerRef = useRef(null);
+  const purchaseTrackedRef = useRef(false);
 
-  if ((!isOpen && !success && !error) || !item) return null;
+  // Modified: Keep modal open if success, error, or pending is true
+  if ((!isOpen && !success && !error && !pending) || !item) return null;
 
-  const selected    = paymentMethods.find((m) => m.id === method);
-  const isMomo      = method === "momo";
-  const isCard      = method === "card";
+  const selected = paymentMethods.find((m) => m.id === method);
+  const isMomo = method === "momo";
   const localDigits = localPhone.replace(/\D/g, "");
 
   const buildFullPhone = (raw) => `${ZAMBIA.dial}${raw.replace(/\D/g, "")}`;
@@ -77,8 +128,112 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }) {
     return localDigits.length >= 7;
   };
 
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const cleanupTimers = () => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+
+  const handleTimeout = () => {
+    cleanupTimers();
+    setTimeoutExpired(true);
+    setPending(false);
+    setError("Payment confirmation timed out. Please check your transaction status or try again.");
+  };
+
+  const handleCancelPayment = () => {
+    cleanupTimers();
+    setPending(false);
+    setError("Payment cancelled by user.");
+  };
+
+  useEffect(() => {
+    if (!pending || !reference) return;
+
+    setTimeRemaining(PENDING_TIMEOUT_SECONDS);
+    setTimeoutExpired(false);
+
+    timerRef.current = setInterval(() => {
+      setTimeRemaining((prev) => {
+        if (prev <= 1) {
+          handleTimeout();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    pollRef.current = setInterval(async () => {
+      try {
+        const result = await checkPaymentStatus(reference);
+        if (!result.done) return;
+
+        cleanupTimers();
+        
+        if (result.ok) {
+          setPending(false);
+          setSuccess(true);
+          // REMOVED: onSuccess() call here - will be called when user clicks "Done"
+        } else {
+          setPending(false);
+          setError("Payment failed. Please try again.");
+        }
+      } catch {
+        // Network hiccup — don't fail the payment over a single missed poll
+      }
+    }, 4000);
+
+    return () => {
+      cleanupTimers();
+    };
+  }, [pending, reference]);
+
+  // purchase — fires once, the moment `success` becomes true, keyed off
+  // `reference` as the idempotency guard (transaction_id) so a re-render of
+  // the success screen can never double-push the same purchase.
+  useEffect(() => {
+    if (!success || !reference || purchaseTrackedRef.current) return;
+    purchaseTrackedRef.current = true;
+
+    const amount = parseAmount(item.price);
+    const type = inferPurchaseType(item);
+
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({
+      event: "purchase",
+      transaction_id: reference,
+      value: amount,
+      currency: "ZMW",
+      type,
+      payment_method: method, // only "momo" is wired up currently
+      is_first_purchase: false, // TODO: no client-side signal for this yet —
+      // needs an account/history flag from the backend if tab 6 requires it accurately
+      items: [
+        {
+          item_id: item.code || "airtime_topup",
+          item_name: item.name,
+          item_category: type,
+          price: amount,
+          quantity: 1,
+        },
+      ],
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [success, reference]);
+
   const handlePhoneChange = (e) => {
-    const raw    = e.target.value.replace(/[^\d\s-]/g, "");
+    const raw = e.target.value.replace(/[^\d\s-]/g, "");
     const digits = raw.replace(/\D/g, "");
     if (digits.length > MAX_PHONE_DIGITS) return;
     setLocalPhone(raw);
@@ -88,78 +243,72 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }) {
     if (!canSubmit()) return;
     setLoading(true);
     setError("");
+    setPending(false);
+    setPendingMessage("");
+    setTimeoutExpired(false);
+    setTimeRemaining(PENDING_TIMEOUT_SECONDS);
+
     const fullPhone = buildFullPhone(localPhone);
 
     try {
-      if (isCard) {
-        await loadPayFastEngine();
-        const res = await fetch(`${BACKEND_URL}/api/payment/initiate`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "ngrok-skip-browser-warning": "true",
-          },
-          body: JSON.stringify({
-            itemName:   item.name,
-            amount:     parseAmount(item.price),
-            phone:      fullPhone,
-            email:      email.trim() || undefined,
-            bundleCode: item.code, // stored on Payment entity → used by ITN to trigger recharge
-          }),
-        });
-        if (!res.ok) throw new Error("Server error — could not initiate payment.");
-        const data = await res.json();
-        if (!data.uuid) throw new Error("No payment identifier returned from server.");
-        setLoading(false);
-        onClose();
-        window.payfast_do_onsite_payment({ uuid: data.uuid }, (result) => {
-          if (result === true || result === "true" || result === 1) {
-            setSuccess(true);
-          } else {
-            setError(
-              result === false || result === null
-                ? "Payment was cancelled. Please try again."
-                : "Payment failed. Please try again."
-            );
-          }
-        });
+      const ref = `${Date.now()}-${localDigits}`;
+      setReference(ref);
 
-      } else {
-        const res = await fetch(`${BASE_URL}/api/v1/recharges/bundles`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            sponsor_phone_number:     fullPhone,
-            beneficiary_phone_number: fullPhone,              
-            // eslint-disable-next-line react-hooks/purity
-            reference:                `${Date.now()}-${localDigits}`, 
-            bundle_code:              item.code,
-            payment_method:           "momo",
-          }),
-        });
-        
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          throw new Error(data.message || data.error || "Recharge failed. Please try again.");
-        }
+      const res = await fetch(`${BASE_URL}/api/v1/recharges/bundles`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sponsor_phone_number: fullPhone,
+          beneficiary_phone_number: fullPhone,
+          reference: ref,
+          bundle_code: item.code,
+          payment_method: "momo",
+        }),
+      });
 
+      const data = await res.json().catch(() => ({}));
+
+      const pendingMsg = extractPendingMessage(data);
+      if (pendingMsg) {
         setLoading(false);
-        setSuccess(true);
+        setPending(true);
+        setPendingMessage(pendingMsg);
+        return;
       }
+
+      if (!res.ok) {
+        throw new Error("Recharge failed. Please try again.");
+      }
+
+      setLoading(false);
+      setSuccess(true);
+      // REMOVED: onSuccess() call here - will be called when user clicks "Done"
     } catch (err) {
       setLoading(false);
-      setError(err.message || "Something went wrong. Please try again.");
+      setError( "Something went wrong. Please try again.");
     }
   };
 
   const handleClose = () => {
+    cleanupTimers();
+    
+    // Call onSuccess only when user clicks "Done" on success screen
+    if (success && onSuccess) {
+      onSuccess();
+    }
+    
     setMethod("momo");
     setMethodOpen(false);
     setLocalPhone("");
-    setEmail("");
     setLoading(false);
     setSuccess(false);
     setError("");
+    setPending(false);
+    setPendingMessage("");
+    setReference("");
+    setTimeRemaining(PENDING_TIMEOUT_SECONDS);
+    setTimeoutExpired(false);
+    purchaseTrackedRef.current = false; // allow tracking again for the next purchase in this modal instance
     onClose();
   };
 
@@ -167,7 +316,7 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-xl">
 
-        {/* ── SUCCESS ── */}
+        {/* SUCCESS */}
         {success && (
           <div className="p-6 text-center">
             <div className="w-16 h-16 bg-mtn-yellow rounded-full flex items-center justify-center mx-auto mb-4">
@@ -180,10 +329,10 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }) {
 
             <div className="bg-gray-50 rounded-xl p-4 text-left mb-5 space-y-2">
               {[
-                ["Bundle",      item.name],
+                ["Bundle", item.name],
                 ["Amount Paid", formatPrice(item.price)],
-                ["Method",      selected?.label],
-                ["Phone",       buildFullPhone(localPhone)],
+                ["Method", selected?.label],
+                ["Phone", buildFullPhone(localPhone)],
               ].map(([label, val]) => (
                 <div key={label} className="flex justify-between">
                   <span className="text-gray-400 text-sm">{label}</span>
@@ -193,7 +342,7 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }) {
             </div>
 
             <button
-              onClick={() => { if (onSuccess) onSuccess(); handleClose(); }}
+              onClick={handleClose}
               className="w-full py-3 bg-mtn-yellow text-mtn-black rounded-xl font-bold hover:bg-mtn-black hover:text-mtn-yellow transition"
             >
               Done
@@ -201,8 +350,47 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }) {
           </div>
         )}
 
-        {/* ── ERROR ── */}
-        {error && !success && (
+        {/* PENDING */}
+        {pending && !success && !timeoutExpired && (
+          <div className="p-6 text-center">
+            <div className="w-16 h-16 bg-mtn-yellow/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg
+                width="28" height="28" viewBox="0 0 24 24" fill="none"
+                stroke="#B8860B" strokeWidth="2.5"
+                className="animate-spin"
+                style={{ animationDuration: "1.4s" }}
+              >
+                <circle cx="12" cy="12" r="10" strokeOpacity="0.25" />
+                <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-extrabold text-mtn-black mb-1">Payment Pending</h3>
+            <p className="text-gray-400">
+              {pendingMessage && pendingMessage.toLowerCase() !== "pending"
+                ? pendingMessage
+                : "A prompt has been sent to your phone. Approve it there to complete this purchase."}
+            </p>
+            
+            <div className="mt-4 p-3 bg-gray-50 rounded-xl">
+              <p className="text-sm text-gray-500">Time remaining</p>
+              <p className="text-2xl font-bold text-mtn-black font-mono">
+                {formatTime(timeRemaining)}
+              </p>
+            </div>
+            
+            <p className="text-xs text-gray-300 mt-4">This will update automatically once confirmed.</p>
+            
+            <button
+              onClick={handleCancelPayment}
+              className="mt-6 px-6 py-2 border border-gray-300 text-gray-500 rounded-xl font-semibold hover:bg-gray-50 hover:border-gray-400 transition"
+            >
+              Cancel Payment
+            </button>
+          </div>
+        )}
+
+        {/* ERROR */}
+        {error && !success && !pending && (
           <div className="p-6 text-center">
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5">
@@ -211,8 +399,10 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }) {
                 <line x1="12" y1="16" x2="12.01" y2="16" />
               </svg>
             </div>
-            <h3 className="text-xl font-extrabold text-mtn-black mb-1">Payment Unsuccessful</h3>
-            <p className="text-gray-400 mb-6">{error}</p>
+            <h3 className="text-xl font-extrabold text-mtn-black mb-1">
+              {timeoutExpired ? "Payment Timeout" : error === "Payment cancelled by user." ? "Payment Cancelled" : "Payment Unsuccessful"}
+            </h3>
+            <p className="text-gray-400 mb-6"></p>
             <div className="flex gap-3">
               <button
                 onClick={handleClose}
@@ -220,18 +410,24 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }) {
               >
                 Close
               </button>
-              <button
-                onClick={() => setError("")}
-                className="flex-1 py-3 bg-mtn-yellow text-mtn-black rounded-xl font-bold hover:bg-mtn-black hover:text-mtn-yellow transition"
-              >
-                Try Again
-              </button>
+              {error !== "Payment cancelled by user." && (
+                <button
+                  onClick={() => {
+                    setError("");
+                    setTimeoutExpired(false);
+                    setTimeRemaining(PENDING_TIMEOUT_SECONDS);
+                  }}
+                  className="flex-1 py-3 bg-mtn-yellow text-mtn-black rounded-xl font-bold hover:bg-mtn-black hover:text-mtn-yellow transition"
+                >
+                  Try Again
+                </button>
+              )}
             </div>
           </div>
         )}
 
-        {/* ── PAYMENT FORM ── */}
-        {!success && !error && (
+        {/* PAYMENT FORM */}
+        {!success && !error && !pending && (
           <div className="p-5">
 
             {/* Header */}
@@ -295,7 +491,6 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }) {
                         setMethod(m.id);
                         setMethodOpen(false);
                         setLocalPhone("");
-                        setEmail("");
                         setError("");
                       }}
                       className={`w-full flex items-center gap-3 p-3 transition ${
@@ -325,7 +520,7 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }) {
 
             {/* Phone */}
             <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-1">
-              {isMomo ? "MTN MoMo Number" : "Mobile Number"}
+              MTN MoMo Number
             </p>
             <input
               type="tel"
@@ -344,46 +539,14 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }) {
                 </span>
               </p>
             )}
-            {isMomo && localDigits.length === MAX_PHONE_DIGITS && !isValidMTNNumber(localDigits) && (
+            {localDigits.length === MAX_PHONE_DIGITS && !isValidMTNNumber(localDigits) && (
               <p className="text-xs text-red-500 mt-1 mb-1">
                 Please enter a valid MTN Zambia number (076, 095, 096, or 097).
               </p>
             )}
 
-            {/* Email — card only */}
-            {isCard && (
-              <>
-                <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-1 mt-3">
-                  Email Address{" "}
-                  <span className="font-normal normal-case text-gray-400">(optional)</span>
-                </p>
-                <input
-                  type="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full p-3 border border-gray-200 rounded-xl
-                    focus:border-mtn-yellow focus:ring-1 focus:ring-mtn-yellow
-                    outline-none text-mtn-black mb-3"
-                />
-                <div className="bg-mtn-yellow/10 border border-mtn-yellow/30 rounded-xl p-3 mb-2 flex items-start gap-2">
-                  <svg className="w-4 h-4 text-mtn-black mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
-                      d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20A10 10 0 0012 2z" />
-                  </svg>
-                  <p className="text-xs text-mtn-black">
-                    {email.trim()
-                      ? "A receipt will be sent to your email."
-                      : "Add an email above to receive a receipt."}
-                  </p>
-                </div>
-              </>
-            )}
-
             <p className="text-xs text-gray-400 mb-4">
-              {isMomo
-                ? "A payment prompt will be sent to your MTN MoMo number."
-                : "Complete your card payment in the secure overlay."}
+              A payment prompt will be sent to your MTN MoMo number.
             </p>
 
             {/* Total */}
@@ -402,20 +565,8 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }) {
                   : "bg-gray-100 text-gray-400 cursor-not-allowed"
               }`}
             >
-              {loading
-                ? (isCard ? "Loading PayFast..." : "Processing...")
-                : (isCard ? "Pay with Card →" : "Confirm Purchase")}
+              {loading ? "Processing..." : "Confirm Purchase"}
             </button>
-
-            {isCard && (
-              <p className="text-center text-xs text-gray-400 mt-3 flex items-center justify-center gap-1">
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
-                    d="M12 11c0-1.1.9-2 2-2s2 .9 2 2v2H10v-2c0-1.1.9-2 2-2zm-6 9V10a6 6 0 1112 0v10H6z" />
-                </svg>
-                Secured by PayFast · PCI DSS Compliant
-              </p>
-            )}
 
           </div>
         )}

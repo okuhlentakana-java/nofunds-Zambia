@@ -59,37 +59,45 @@ export default function AdvertPage() {
     setErrors((er) => ({ ...er, [field]: undefined }));
   };
 
-const handleSubmit = async () => {
-  const e = validate();
-  if (Object.keys(e).length) {
-    setErrors(e);
-    return;
-  }
-  setLoading(true);
-  try {
-    const res = await fetch(`${BACKEND_URL}/api/adverts/enquiry`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "ngrok-skip-browser-warning": "true",
-      },
-      body: JSON.stringify({
-        fullName:    form.fullName,
-        companyName: form.companyName,
-        email:       form.email,
-        phone:       form.phone,
-        campaign:    form.campaign,
-      }),
-    });
-    if (!res.ok) throw new Error("Server error");
-    setSubmitted(true);
-  // eslint-disable-next-line no-unused-vars
-  } catch (err) {
-    setErrors({ submit: "Failed to submit. Please try again." });
-  } finally {
-    setLoading(false);
-  }
-};
+  const handleSubmit = async () => {
+    const e = validate();
+    if (Object.keys(e).length) {
+      setErrors(e);
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/adverts/enquiry`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
+        },
+        body: JSON.stringify({
+          fullName:    form.fullName,
+          companyName: form.companyName,
+          email:       form.email,
+          phone:       form.phone,
+          campaign:    form.campaign,
+        }),
+      });
+      if (!res.ok) throw new Error("Server error");
+      setSubmitted(true);
+
+      // advertise_with_us_click -> GA4 generate_lead, fires only on a
+      // successful enquiry submit. NO fullName/email/phone in the push — PII.
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({
+        event: "advertise_with_us_click",
+        source_zone: "ad_zones",
+      });
+    // eslint-disable-next-line no-unused-vars
+    } catch (err) {
+      setErrors({ submit: "Failed to submit. Please try again." });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleDone = () => {
     setSubmitted(false);

@@ -5,115 +5,94 @@ import ServiceCard from "../components/services/ServiceCard";
 const services = {
   all: [
     {
-      id: 1,
-      name: "MTN TV",
-      description: "Stream live TV and on-demand content on your phone.",
-      fullDescription: "Watch live television and on-demand content anywhere, anytime on your mobile device.",
-      features: ["Live TV streaming", "On-demand content", "Mobile viewing"],
-      action: "access",
-      type: "content",
-      url: "https://onetv1.mtn.com/",
-    },
-    {
-      id: 2,
-      name: "Swipe & Win",
-      description: "Swipe to stand a chance to win amazing prizes daily.",
-      fullDescription: "Play Swipe & Win for a chance to win K5,000 and other amazing prizes every day.",
-      features: ["Daily prizes", "Win up to K5,000", "Easy to play"],
-      plans: ["Daily", "Weekly", "Monthly"],
-      action: "subscribe",
-      type: "games",
-      url: "http://mtnzmb.swipe4win.com",
-    },
-    {
-      id: 3,
-      name: "Challenges Arena",
-      description: "Compete in challenges and win exciting rewards.",
-      fullDescription: "Enter competitive challenges, test your skills, and win exciting rewards.",
-      features: ["Competitive challenges", "Skill-based games", "Win rewards"],
-      action: "access",
-      type: "games",
-      url: "https://mtnzmca.onmohub.com",
-    },
-    {
-      id: 4,
-      name: "MobiBattle",
-      description: "Battle other players in thrilling mobile game tournaments.",
-      fullDescription: "Join intense mobile game battles and tournaments against players across the network.",
-      features: ["PvP battles", "Tournaments", "Live leaderboards"],
-      action: "access",
-      type: "games",
-      url: "https://mtnzmb.mobibattle.com/",
-    },
-    {
-      id: 5,
-      name: "Xgames",
-      description: "Access a wide variety of exciting mobile games.",
-      fullDescription: "Explore and play a huge library of exciting mobile games across all genres.",
-      features: ["Wide game library", "Multiple genres", "Regular new titles"],
-      action: "access",
-      type: "games",
-      url: "http://mtnzmb.livexgames.com",
-    },
-    {
-      id: 6,
-      name: "Inconcert",
-      description: "Exclusive music and concert video content on demand.",
-      fullDescription: "Watch exclusive concert footage, music videos, and live performances on demand.",
-      features: ["Concert videos", "Music content", "On-demand viewing"],
+      id: "1",
+      name: "MTN One TV",
+      description: "MTN's TV streaming platform with live TV, movies, and series.",
+      fullDescription: "Stream live TV channels, catch up on movies, series, and sports events on MTN One TV – your all-in-one entertainment hub.",
+      features: [
+        "Live TV channels",
+        "Movies & series",
+        "Sports coverage",
+        "On-demand content"
+      ],
       action: "access",
       type: "video",
-      url: "http://acq.vas.ac/4923",
+      url: "https://onetv1.mtn.com/"
     },
     {
-      id: 7,
-      name: "MTN Chef",
-      description: "Discover delicious recipes and cooking tips on your phone.",
-      fullDescription: "Browse hundreds of recipes, cooking tutorials, and food inspiration right on your phone.",
-      features: ["Recipe library", "Cooking tutorials", "Food inspiration"],
-      action: "access",
-      type: "video",
-      url: "http://zm.mtnchef.club/",
-    },
-    {
-      id: 8,
-      name: "Callertunes",
-      description: "Set your favourite song as your caller tune.",
-      fullDescription: "Personalise your phone with a caller tune your contacts hear when they call you.",
-      features: ["Wide music selection", "Easy activation", "Regular updates"],
-      action: "callertune",
-      type: "digital",
-      ussd: "*560#",
-    },
-    {
-      id: 9,
-      name: "WeCare",
-      description: "Health and wellness tips and support services.",
-      fullDescription: "Access health tips, wellness content, and support services to keep you and your family healthy.",
-      features: ["Health tips", "Wellness support", "Family care"],
+      id: "2", 
+      name: "MyMTN",
+      description: "MTN Zambia's self-service customer application.",
+      fullDescription: "Manage your MTN account, buy bundles, check balances, view usage, access offers, and manage your mobile services from a single application.",
+      features: [
+        "Account management",
+        "Bundle purchases",
+        "Balance enquiry",
+        "Usage monitoring",
+        "SIM security services"
+      ],
       action: "access",
       type: "lifestyle",
-      url: "http://wecare.mobi/ZMBMTN/wecare/",
+      url: "https://www.mtn.zm/mymtn/"
     },
     {
-      id: 10,
-      name: "Funny Bone",
-      description: "Daily jokes, comedy clips, and entertainment to brighten your day.",
-      fullDescription: "Get your daily dose of laughs with jokes, comedy clips, and fun entertainment.",
-      features: ["Daily jokes", "Comedy clips", "Fun content"],
+      id: "3",
+      name: "MTN MoMo",
+      description: "MTN Zambia's mobile money platform.",
+      fullDescription: "Send and receive money, buy airtime and bundles, pay bills, make merchant payments, access savings and loan products, and perform financial transactions securely from your mobile phone.",
+      features: [
+        "Money transfers",
+        "Bill payments",
+        "Merchant payments",
+        "Savings",
+        "Loans",
+        "International remittances"
+      ],
+      action: "access",
+      type: "financial",
+      url: "https://www.mtn.zm/momo/"
+    },
+    {
+      id: "4",
+      name: "Mixo Mixo",
+      description: "Combined voice, SMS and data bundle service.",
+      fullDescription: "A converged telecommunications bundle allowing customers to purchase voice minutes, data, SMS and streaming allocations in a single package.",
+      features: [
+        "Voice minutes",
+        "Data bundles",
+        "SMS bundles",
+        "Daily bundles",
+        "Weekly bundles",
+        "Monthly bundles"
+      ],
+      action: "purchase",
+      type: "connectivity",
+      url: "https://www.mtn.zm/personal-home/mixo-mixo/"
+    },
+    {
+      id: "5",
+      name: "MTN Enterprise",
+      description: "Business and enterprise communications solutions.",
+      fullDescription: "Corporate connectivity, IoT, cloud, communications and managed business services for enterprises.",
+      features: [
+        "Business connectivity",
+        "Enterprise internet",
+        "IoT solutions",
+        "Managed services"
+      ],
       action: "access",
       type: "lifestyle",
-      url: "http://mtnfunnybone.com",
+      url: "https://www.mtn.zm/business/"
     },
   ],
   games: [],
   video: [],
-  digital: [],
+  connectivity: [],
   lifestyle: [],
 };
 
 // Populate sub-category arrays from the master list
-["games", "video", "digital", "lifestyle"].forEach((cat) => {
+["games", "video", "connectivity", "lifestyle"].forEach((cat) => {
   services[cat] = services.all.filter((s) => s.type === cat);
 });
 
@@ -121,8 +100,17 @@ export default function ServicesPage() {
   const [activeTab, setActiveTab] = useState("all");
   const [activeServices, setActiveServices] = useState({});
 
-  const handleActivate = (serviceId) => {
-    setActiveServices((prev) => ({ ...prev, [serviceId]: true }));
+  const handleActivate = (service) => {
+    // service_action — covers MoMo activate / Kongola apply / card subscribe /
+    // app download per tab 5 event #26. "action" here reuses the service's
+    // own `action` field (access|purchase) as the value.
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({
+      event: "service_action",
+      service: service.name,
+      action: service.action,
+    });
+    setActiveServices((prev) => ({ ...prev, [service.id]: true }));
   };
 
   const currentServices = services[activeTab] || services.all;
@@ -136,7 +124,7 @@ export default function ServicesPage() {
             key={service.id}
             service={service}
             isActive={!!activeServices[service.id]}
-            onActivate={() => handleActivate(service.id)}
+            onActivate={() => handleActivate(service)}
           />
         ))}
       </div>

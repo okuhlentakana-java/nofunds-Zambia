@@ -67,9 +67,16 @@ export function useBundles(filters = {}) {
   return { bundles, loading, error };
 }
 
+// useBundles.js (or wherever useBundlesByCategory is defined)
+
 export function useBundlesByCategory(category) {
-  return useBundles({
-    category,
-    network_operator_country: "ZM", 
+  // Fetch ALL bundles (no category filter, but keep other filters like country)
+  const { bundles: allBundles, loading, error } = useBundles({
+    network_operator_country: "ZM",
   });
+
+  // Filter client‑side by category (case‑insensitive)
+  const filtered = allBundles.filter(b => b.category?.toLowerCase() === category.toLowerCase());
+
+  return { bundles: filtered, loading, error };
 }

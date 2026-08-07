@@ -22,7 +22,7 @@ function App() {
       <Routes>
         <Route element={<Layout />}>
            <Route path="/" element={<HomePage />} />
-           <Route path="/recharge" element={<RechargePage />} /> 
+           {/* <Route path="/recharge" element={<RechargePage />} /> */}
            <Route path="/bundles" element={<BundlesPage />} /> 
            <Route path="/credit" element={<AirtimeCreditPage />} /> 
            <Route path="/services" element={<ServicesPage />} /> 

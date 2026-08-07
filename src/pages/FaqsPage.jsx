@@ -61,7 +61,19 @@ function AccordionItem({ q, a, isOpen, onToggle, isLast }) {
 
 export default function FAQsPage() {
   const [openKey, setOpenKey] = useState(null);
-  const toggle = (key) => setOpenKey(openKey === key ? null : key);
+
+  // NOTE: "faq_open" and its "question" parameter appear in tab 3's zone
+  // description but are not formally listed in tab 6's parameter spec.
+  // Confirm exact event/param naming with Comfort before QA so the GTM
+  // Data Layer Variable is mapped to the right key.
+  const toggle = (key, question) => {
+    const opening = openKey !== key;
+    setOpenKey(opening ? key : null);
+    if (opening) {
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({ event: "faq_open", question });
+    }
+  };
 
   return (
     <div className="px-4 sm:px-6 pt-6 pb-10 max-w-2xl mx-auto">
@@ -84,7 +96,7 @@ export default function FAQsPage() {
                     q={faq.q}
                     a={faq.a}
                     isOpen={openKey === key}
-                    onToggle={() => toggle(key)}
+                    onToggle={() => toggle(key, faq.q)}
                     isLast={i === group.faqs.length - 1}
                   />
                 );

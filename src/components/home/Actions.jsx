@@ -3,11 +3,12 @@ import { BsPhone } from "react-icons/bs";
 import { CiWifiOn } from "react-icons/ci";
 import { LuHandCoins } from "react-icons/lu";
 import { BsStars } from "react-icons/bs";
+import { RiFireLine } from "react-icons/ri";
 
 const actions = [
-  { name: "Recharge", icon: <BsPhone />, to: "/recharge" },
+  { name: "Advertise", icon: <BsPhone />, to: "/ads" },
   { name: "Bundles", icon: <CiWifiOn />, to: "/bundles" },
-  { name: "Borrow", icon: <LuHandCoins />, to: "/credit" },
+  { name: "Offers", icon: <RiFireLine />, to: "/offers" },
   { name: "Services", icon: <BsStars />, to: "/services" },
 ];
 

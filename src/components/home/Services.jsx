@@ -1,3 +1,4 @@
+// components/Services.jsx
 import { FaArrowRight } from "react-icons/fa";
 import { LuGamepad2, LuTv, LuMegaphone, LuMusic } from "react-icons/lu";
 import { MdOutlineSportsEsports } from "react-icons/md";
@@ -5,29 +6,28 @@ import { useNavigate } from "react-router-dom";
 
 const services = [
   {
-    name: "Swipe & Win",
-    icon: <MdOutlineSportsEsports />,
-    description: "Swipe for a chance to win K5,000 in prizes daily.",
-    url: "http://mtnzmb.swipe4win.com",
-  },
-  {
-    name: "MTN TV",
+    name: "MTN One TV",
+    description: "Watch live TV, sports, movies and series on MTN One TV.",
     icon: <LuTv />,
-    description: "Stream live TV and on-demand content on your phone.",
     url: "https://onetv1.mtn.com/",
   },
   {
-    name: "Callertunes",
-    icon: <LuMusic />,
-    description: "Set your favourite song as your caller tune via *560#.",
-    url: null, // USSD — no web URL
-    ussd: "*560#",
+    name: "MyMTN",
+    description: "Manage your account and buy bundles.",
+    icon: <LuGamepad2 />,
+    url: "https://www.mtn.zm/mymtn/",
   },
   {
-    name: "Games",
-    icon: <LuGamepad2 />,
-    description: "MobiBattle, Xgames, Challenges Arena and more.",
-    url: "http://mtnzmb.livexgames.com",
+    name: "MTN MoMo",
+    description: "Send money, pay bills and buy airtime.",
+    icon: <MdOutlineSportsEsports />,
+    url: "https://www.mtn.zm/momo/",
+  },
+  {
+    name: "Mixo Mixo",
+    description: "Voice, SMS and data bundles in one package.",
+    icon: <LuMusic />, // kept as is, but you can change the icon if needed
+    url: "https://www.mtn.zm/personal-home/mixo-mixo/",
   },
 ];
 

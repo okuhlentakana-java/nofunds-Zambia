@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FiFilter } from "react-icons/fi";
 import { RiStackLine } from "react-icons/ri";
 import { PiLightning } from "react-icons/pi";
@@ -51,7 +51,29 @@ export default function BundlesPage() {
     return bundles.filter(b => b.category === activeMain && b.subCategory === activeSub);
   })();
 
+  // view_item_list — fires whenever the visible filtered list changes
+  // (main tab or sub tab switch), once loading is done and there's content to show.
+  useEffect(() => {
+    if (activeMain === "custom" || loading || filteredBundles.length === 0) return;
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({
+      event: "view_item_list",
+      item_list_name: activeMain,
+      filter: activeSub,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeMain, activeSub, loading, filteredBundles.length]);
+
   const handleBuy = (bundle) => {
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({
+      event: "select_item",
+      item_id: bundle.code,
+      item_name: bundle.name,
+      item_category: bundle.category || activeMain,
+      price: parseFloat(String(bundle.price).replace(/[^0-9.]/g, "")) || 0,
+      currency: "ZMW",
+    });
     setSelected(bundle);
     setShowModal(true);
   };

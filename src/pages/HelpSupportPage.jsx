@@ -84,6 +84,11 @@ const resources = [
 export default function HelpSupportPage() {
   const [chatOpen, setChatOpen] = useState(false);
 
+  const trackContact = (channel) => {
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({ event: "support_contact_click", channel });
+  };
+
   if (chatOpen) {
     return (
       <div className="px-4 sm:px-6 pt-6 pb-10 max-w-2xl mx-auto">
@@ -97,7 +102,7 @@ export default function HelpSupportPage() {
 
       {/* Chat with MTN Assistant */}
       <button
-        onClick={() => setChatOpen(true)}
+        onClick={() => { trackContact("live_chat"); setChatOpen(true); }}
         className="relative overflow-hidden w-full bg-mtn-black text-white rounded-2xl p-5 flex items-center gap-4 shadow-md ring-1 ring-white/10 after:absolute after:inset-0 after:rounded-2xl after:bg-gradient-to-b after:from-white/15 after:to-transparent after:pointer-events-none hover:opacity-90 transition text-left"
       >
         <div className="w-10 h-10 bg-mtn-yellow rounded-xl flex items-center justify-center flex-shrink-0">
@@ -122,7 +127,7 @@ export default function HelpSupportPage() {
               <p className="text-sm font-semibold text-mtn-black">Call Customer Support</p>
               <p className="text-xs text-gray-400 mt-0.5">Available 24/7</p>
             </div>
-            <a href="tel:0003" className="text-sm font-bold text-mtn-black hover:underline">0003</a>
+            <a href="tel:0003" onClick={() => trackContact("call")} className="text-sm font-bold text-mtn-black hover:underline">0003</a>
           </div>
           <div className="flex items-center gap-4 px-5 py-4">
             <div className="w-9 h-9 bg-mtn-black rounded-xl flex items-center justify-center flex-shrink-0">
@@ -132,7 +137,7 @@ export default function HelpSupportPage() {
               <p className="text-sm font-semibold text-mtn-black">Email Support</p>
               <p className="text-xs text-gray-400 mt-0.5">Response within 24h</p>
             </div>
-            <a href="mailto:support@mtn.domain" className="text-sm font-bold text-mtn-black hover:underline">
+            <a href="mailto:support@mtn.domain" onClick={() => trackContact("email")} className="text-sm font-bold text-mtn-black hover:underline">
               support@mtn.zm
             </a>
           </div>

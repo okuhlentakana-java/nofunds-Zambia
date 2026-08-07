@@ -13,10 +13,8 @@ const navLinks = [
     section: "Navigate",
     links: [
       { icon: <CiHome />, label: "Home", to: "/" },
-      { icon: <BsPhone />, label: "Recharge Airtime", to: "/recharge" },
       { icon: <CiWifiOn />, label: "Data Bundles", to: "/bundles" },
       { icon: <BsMegaphone />, label: "Advertise With Us", to: "/ads" },
-      { icon: <LuHandCoins />, label: "Airtime Credit", to: "/credit" },
       { icon: <RiFireLine />, label: "Hot Offers", to: "/offers" },
       { icon: <BsStars />, label: "Services", to: "/services" },
     ]
@@ -57,7 +55,19 @@ export default function Sidebar({ open, onClose }) {
   };
 
   // Programmatic navigation handler
-  const handleNavigation = (path) => {
+  // NOTE: "menu_item_click" is NOT an explicitly named event in tab 5/6 of the
+  // workbook — the spec only lists "menu_open" for the support/menu zone.
+  // This tracks individual nav destinations, which seemed useful for
+  // understanding sidebar usage, but confirm the event name/params with
+  // Comfort/Pelayo before relying on it in reporting — they may want it
+  // folded into an existing event instead of a new one.
+  // Also: since react-router navigation doesn't unload the page, there's no
+  // risk of losing the dataLayer push before it's flushed (unlike the
+  // click-before-navigation pattern D used for real <a href> links), so a
+  // plain push-then-navigate is sufficient here.
+  const handleNavigation = (path, label) => {
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({ event: "menu_item_click", label, destination: path });
     navigate(path);
     onClose(); // Close the sidebar after navigating
   };
@@ -108,7 +118,7 @@ export default function Sidebar({ open, onClose }) {
                   return (
                     <button
                       key={link.label}
-                      onClick={() => handleNavigation(link.to)}
+                      onClick={() => handleNavigation(link.to, link.label)}
                       className={`w-full flex items-center gap-4 px-3 py-2 rounded-lg transition text-left ${
                         active
                           ? "bg-mtn-yellow text-mtn-black"

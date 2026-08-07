@@ -10,6 +10,7 @@ const actions = [
     title: "Recharge Airtime",
     sub: "Top up your balance via MTN Mobile Money (MoMo) or Card",
     to: "/recharge",
+    cta: "recharge",
   },
   {
     icon: (
@@ -21,6 +22,7 @@ const actions = [
     title: "Buy Data Bundles",
     sub: "Choose from daily, weekly, monthly, social, and night bundles",
     to: "/bundles",
+    cta: "buy_data",
   },
   {
     icon: (
@@ -32,6 +34,7 @@ const actions = [
     title: "Borrow Credit",
     sub: "Get emergency airtime, data, voice, or SMS on credit (XtraTime)",
     to: "/credit",
+    cta: "borrow_xtratime",
   },
   {
     icon: (
@@ -42,6 +45,7 @@ const actions = [
     title: "Access Services",
     sub: "Use digital services from MTN Zambia",
     to: "/services",
+    cta: "access_services",
   },
   {
     icon: (
@@ -52,11 +56,30 @@ const actions = [
     title: "Stay Protected",
     sub: "Subscribe to MTN Sure insurance and other protective services",
     to: "/services",
+    cta: "stay_protected",
   },
 ];
 
 export default function AboutNoFunds() {
   const navigate = useNavigate();
+
+  // NOTE: "cta" allowed values in tab 6 are recharge|buy_data|borrow_xtratime only.
+  // access_services and stay_protected are NOT yet in the spec — confirm with
+  // Comfort/Pelayo whether to add them or map them onto an existing value.
+  const trackCta = (cta) => {
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({ event: "cta_click", cta });
+  };
+
+  const handleActionClick = (action) => {
+    trackCta(action.cta);
+    navigate(action.to);
+  };
+
+  const handleGetStarted = () => {
+    trackCta("get_started");
+    navigate("/");
+  };
 
   return (
     <div className="w-full bg-gray-100 font-sans">
@@ -101,7 +124,7 @@ export default function AboutNoFunds() {
           {actions.map((a, i) => (
             <div
               key={i}
-              onClick={() => navigate(a.to)}
+              onClick={() => handleActionClick(a)}
               className="bg-white rounded-xl p-3.5 flex items-center gap-3.5 shadow-sm cursor-pointer"
             >
               <div className="w-10 h-10 shrink-0 bg-mtn-black rounded-xl flex items-center justify-center text-mtn-yellow">
@@ -120,7 +143,7 @@ export default function AboutNoFunds() {
 
         {/* Get Started Button */}
         <button
-          onClick={() => navigate("/")}
+          onClick={handleGetStarted}
           className="w-full py-4 bg-mtn-yellow text-mtn-black rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition hover:bg-mtn-black hover:text-white mb-3"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

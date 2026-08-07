@@ -31,6 +31,21 @@ export default function RechargePage() {
         features: [`M${amount} airtime credit`, "No expiry", "Valid for all services"],
       };
       setRechargeItem(item);
+
+      // begin_checkout — entry into the recharge flow.
+      // NOTE: currency below is hardcoded ZMW per tab 6 ("currency always ZMW"),
+      // but the displayed label above uses an "M" prefix (M${amount}) rather
+      // than a ZMW/K prefix — worth confirming with the team this isn't a
+      // leftover from a different market's build before shipping.
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({
+        event: "begin_checkout",
+        value: amount,
+        currency: "ZMW",
+        type: "airtime",
+        items: [{ item_id: "airtime_topup", item_name: `Recharge M${amount}`, price: amount, quantity: 1 }],
+      });
+
       setShowPaymentModal(true);
     }
   };

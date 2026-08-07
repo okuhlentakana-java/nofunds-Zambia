@@ -2,7 +2,7 @@ const tabs = [
   { id: "all", label: "All Services" },
   { id: "games", label: "Games" },
   { id: "video", label: "Video" },
-  { id: "digital", label: "Digital" },
+  { id: "connectivity", label: "Connectivity" },
   { id: "lifestyle", label: "Lifestyle" },
 ];
 
