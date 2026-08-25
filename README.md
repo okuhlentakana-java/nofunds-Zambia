@@ -1,16 +1,61 @@
-# React + Vite
+# MTN Zambia — No Funds Portal
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A React + Vite web app for MTN Zambia's zero-rated "No Funds" portal. Subscribers with a zero data/airtime balance are redirected here to recharge, buy bundles, borrow emergency credit (XtraTime), or access value-added services — all without using data.
 
-Currently, two official plugins are available:
+## Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Frontend:** React (Vite), React Router, Tailwind CSS
+- **Payments:** MTN Mobile Money (MoMo) via backend recharge API
+- **Ads:** Tangazo ad zones (`primary_banner`, `square_card`, `footer_banner`)
+- **Analytics:** Google Tag Manager (GTM) + `dataLayer` events, tracked per the Analytics Implementation Workbook
 
-## React Compiler
+## Key Pages & Components
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+| Path | Purpose |
+|---|---|
+| `HomePage` | Landing screen on redirect, shows entry reason/tier |
+| `AboutNoFunds` | Explains the portal, hero CTAs into each flow |
+| `BundlesPage` | Data/voice/social/night bundle catalogue + filters |
+| `HotOffers` | Curated "best value" / night / social deal carousels |
+| `RechargePage` | Airtime top-up flow |
+| `ServicesPage` | VAS catalogue (MTN One TV, MyMTN, MoMo, etc.) |
+| `AdvertPage` | Advertiser lead-gen enquiry form |
+| `HelpSupportPage` / `FAQsPage` | Support chat, contact channels, FAQs |
+| `Emergency` | Emergency service numbers (untracked, outside analytics scope) |
+| `components/universal/PaymentModal` | Shared MoMo payment flow used by Bundles, Hot Offers, and Recharge |
+| `components/home/*Banner` | Tangazo ad zone components (impression/click tracked) |
 
-## Expanding the ESLint configuration
+## Analytics
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+GTM container is wired in `index.html` (head snippet + body noscript iframe). Event tracking follows the zone/event/parameter spec in the Analytics Implementation Workbook:
+
+- `page_view`, `cta_click` — entry & navigation
+- `view_item_list`, `select_item`, `begin_checkout`, `purchase` — bundle/airtime ecommerce funnel
+- `ad_impression`, `ad_click` — Tangazo ad zones (IntersectionObserver-based)
+- `service_action`, `advertise_with_us_click` (→ `generate_lead`), `support_contact_click`, `faq_open` — engagement zones
+
+No PII (MSISDN, OTP, name, email, card number) is ever pushed to the `dataLayer`.
+
+**Known open items:**
+- `PaymentModal`'s `type` param needs bundle category passed explicitly from each call site (currently defaults to `"data"`/`"airtime"`).
+- `is_first_purchase` has no client-side source yet — needs a backend account-history flag.
+- Live Tangazo-served ad creatives don't expose `ad_id`/`advertiser`/`campaign` at the component layer — only the static fallback banners do.
+
+## Getting Started
+
+```sh
+npm install
+npm run dev
+```
+
+## Build
+
+```sh
+npm run build
+```
+
+## Linting
+
+```sh
+npm run lint
+```

@@ -5,7 +5,7 @@ import { BASE_URL } from "../../api/index";
 const ZAMBIA = { code: "ZM", dial: "+260" };
 const MAX_PHONE_DIGITS = 9;
 const MTN_PREFIXES_2 = ["95", "96", "97", "76"];
-const PENDING_TIMEOUT_SECONDS = 240; // 4 minutes
+const PENDING_TIMEOUT_SECONDS = 90; 
 
 const paymentMethods = [
   {
