@@ -45,11 +45,16 @@ export default function BundlesPage() {
   const [selectedBundle, setSelected] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
-  const filteredBundles = (() => {
-    if (activeMain === "custom") return [];
-    if (activeMain === "all") return bundles.filter(b => b.subCategory === activeSub);
-    return bundles.filter(b => b.category === activeMain && b.subCategory === activeSub);
-  })();
+const filteredBundles = (() => {
+  if (activeMain === "custom") return [];
+  const list =
+    activeMain === "all"
+      ? bundles.filter(b => b.subCategory === activeSub)
+      : bundles.filter(b => b.category === activeMain && b.subCategory === activeSub);
+
+  // smallest → biggest by data size
+  return [...list].sort((a, b) => a.sizeMb - b.sizeMb);
+})();
 
   // view_item_list — fires whenever the visible filtered list changes
   // (main tab or sub tab switch), once loading is done and there's content to show.

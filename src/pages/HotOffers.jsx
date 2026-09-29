@@ -60,20 +60,23 @@ export default function HotOffers() {
   const { bundles: nightBundles, loading: loadingNight } = useBundlesByCategory("night");
   const { bundles: socialBundles, loading: loadingSocial } = useBundlesByCategory("social");
 
-  const bestValue = [
-    ...dataBundles.filter(b => b.label === "Best Value"),
-    ...dataBundles.filter(b => b.label !== "Best Value"),
-  ].slice(0, 4);
+const sortedData = [...dataBundles].sort((a, b) => a.sizeMb - b.sizeMb);
+const bestValue = [
+  ...sortedData.filter(b => b.label === "Best Value"),
+  ...sortedData.filter(b => b.label !== "Best Value"),
+].slice(0, 4);
 
-  const nightDeals = [...nightBundles]
-    .sort((a, b) => parsePrice(a.price) - parsePrice(b.price))
-    .slice(0, 3);
+const nightDeals = [...nightBundles]
+  .sort((a, b) => a.sizeMb - b.sizeMb)
+  .slice(0, 3);
 
-  const socialDeals = [
-    socialBundles.find(b => b.subCategory === "daily"),
-    socialBundles.find(b => b.subCategory === "weekly"),
-    socialBundles.find(b => b.subCategory === "monthly"),
-  ].filter(Boolean);
+const socialDeals = [
+  socialBundles.find(b => b.subCategory === "daily"),
+  socialBundles.find(b => b.subCategory === "weekly"),
+  socialBundles.find(b => b.subCategory === "monthly"),
+]
+  .filter(Boolean)
+  .sort((a, b) => a.sizeMb - b.sizeMb);
 
   // view_item_list — one push per carousel/section, once it has content to show.
   useEffect(() => {

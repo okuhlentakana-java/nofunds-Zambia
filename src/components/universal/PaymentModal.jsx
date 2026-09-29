@@ -4,7 +4,7 @@ import { BASE_URL } from "../../api/index";
 
 const ZAMBIA = { code: "ZM", dial: "+260" };
 const MAX_PHONE_DIGITS = 9;
-const MTN_PREFIXES_2 = ["95", "96", "97", "76"];
+const MTN_PREFIXES_2 = [ "96", "76"];
 const PENDING_TIMEOUT_SECONDS = 90; 
 
 const paymentMethods = [
@@ -116,17 +116,42 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }) {
   const isMomo = method === "momo";
   const localDigits = localPhone.replace(/\D/g, "");
 
-  const buildFullPhone = (raw) => `${ZAMBIA.dial}${raw.replace(/\D/g, "")}`;
+  const buildFullPhone = (raw) => {
+  const digits = raw.replace(/\D/g, "");
+  // If digits start with 0, remove it
+  const cleanedDigits = digits.startsWith('0') ? digits.slice(1) : digits;
+  return `${ZAMBIA.dial}${cleanedDigits}`;
+};
 
   const isValidMTNNumber = (digits) => {
-    if (digits.length !== MAX_PHONE_DIGITS) return false;
+  // Check if digits start with 0
+  if (digits.length === MAX_PHONE_DIGITS + 1 && digits.startsWith('0')) {
+    const withoutLeadingZero = digits.slice(1);
+    return MTN_PREFIXES_2.includes(withoutLeadingZero.slice(0, 2));
+  }
+  
+  // Original validation for 9 digits without leading 0
+  if (digits.length === MAX_PHONE_DIGITS) {
     return MTN_PREFIXES_2.includes(digits.slice(0, 2));
-  };
+  }
+  
+  return false;
+};
 
   const canSubmit = () => {
-    if (isMomo) return isValidMTNNumber(localDigits);
-    return localDigits.length >= 7;
-  };
+  if (isMomo) {
+    if (localDigits.length === 0) return false;
+    
+    // If it starts with 0, check the 10-digit version
+    if (localDigits.length === MAX_PHONE_DIGITS + 1 && localDigits.startsWith('0')) {
+      return MTN_PREFIXES_2.includes(localDigits.slice(1, 3));
+    }
+    
+    // Regular 9-digit check
+    return isValidMTNNumber(localDigits);
+  }
+  return localDigits.length >= 7;
+};
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -233,11 +258,13 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }) {
   }, [success, reference]);
 
   const handlePhoneChange = (e) => {
-    const raw = e.target.value.replace(/[^\d\s-]/g, "");
-    const digits = raw.replace(/\D/g, "");
-    if (digits.length > MAX_PHONE_DIGITS) return;
-    setLocalPhone(raw);
-  };
+  const raw = e.target.value.replace(/[^\d\s-]/g, "");
+  const digits = raw.replace(/\D/g, "");
+  
+  // Allow up to 10 digits (0 + 9 digits) or 9 digits
+  if (digits.length > MAX_PHONE_DIGITS + 1) return;
+  setLocalPhone(raw);
+};
 
   const handleConfirm = async () => {
     if (!canSubmit()) return;
@@ -390,41 +417,64 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }) {
         )}
 
         {/* ERROR */}
-        {error && !success && !pending && (
-          <div className="p-6 text-center">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="8" x2="12" y2="12" />
-                <line x1="12" y1="16" x2="12.01" y2="16" />
-              </svg>
-            </div>
-            <h3 className="text-xl font-extrabold text-mtn-black mb-1">
-              {timeoutExpired ? "Payment Timeout" : error === "Payment cancelled by user." ? "Payment Cancelled" : "Payment Unsuccessful"}
-            </h3>
-            <p className="text-gray-400 mb-6"></p>
-            <div className="flex gap-3">
-              <button
-                onClick={handleClose}
-                className="flex-1 py-3 border border-gray-200 text-gray-500 rounded-xl font-semibold hover:bg-gray-50 transition"
-              >
-                Close
-              </button>
-              {error !== "Payment cancelled by user." && (
-                <button
-                  onClick={() => {
-                    setError("");
-                    setTimeoutExpired(false);
-                    setTimeRemaining(PENDING_TIMEOUT_SECONDS);
-                  }}
-                  className="flex-1 py-3 bg-mtn-yellow text-mtn-black rounded-xl font-bold hover:bg-mtn-black hover:text-mtn-yellow transition"
-                >
-                  Try Again
-                </button>
-              )}
-            </div>
-          </div>
-        )}
+{error && !success && !pending && (
+  <div className="p-6 text-center">
+    <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5">
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" y1="8" x2="12" y2="12" />
+        <line x1="12" y1="16" x2="12.01" y2="16" />
+      </svg>
+    </div>
+    <h3 className="text-xl font-extrabold text-mtn-black mb-1">
+      {timeoutExpired ? "Payment Timeout" : error === "Payment cancelled by user." ? "Payment Cancelled" : "Payment Unsuccessful"}
+    </h3>
+    <p className="text-gray-400 mb-6"></p>
+    
+    {/* Show the bundle that was being purchased */}
+    <div className="bg-gray-50 rounded-xl p-4 mb-5 text-left">
+      <p className="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-2">
+        Bundle Details
+      </p>
+      <div className="flex justify-between items-center">
+        <div>
+          <p className="font-semibold text-mtn-black">{item.name}</p>
+          <p className="text-xs text-gray-400">{item.validity}</p>
+        </div>
+        <p className="font-extrabold text-mtn-black">{formatPrice(item.price)}</p>
+      </div>
+      {item.description && (
+        <p className="text-xs text-gray-400 mt-1">{item.description}</p>
+      )}
+      <div className="mt-2 pt-2 border-t border-gray-200">
+        <p className="text-xs text-gray-400">
+          Phone: <span className="font-mono font-semibold text-mtn-black">{buildFullPhone(localPhone)}</span>
+        </p>
+      </div>
+    </div>
+    
+    <div className="flex gap-3">
+      <button
+        onClick={handleClose}
+        className="flex-1 py-3 border border-gray-200 text-gray-500 rounded-xl font-semibold hover:bg-gray-50 transition"
+      >
+        Close
+      </button>
+      {error !== "Payment cancelled by user." && (
+        <button
+          onClick={() => {
+            setError("");
+            setTimeoutExpired(false);
+            setTimeRemaining(PENDING_TIMEOUT_SECONDS);
+          }}
+          className="flex-1 py-3 bg-mtn-yellow text-mtn-black rounded-xl font-bold hover:bg-mtn-black hover:text-mtn-yellow transition"
+        >
+          Try Again
+        </button>
+      )}
+    </div>
+  </div>
+)}
 
         {/* PAYMENT FORM */}
         {!success && !error && !pending && (
@@ -524,7 +574,7 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }) {
             </p>
             <input
               type="tel"
-              placeholder="97 123 4567"
+              placeholder="096 123 4567"
               value={localPhone}
               onChange={handlePhoneChange}
               className="w-full px-3 py-3 border border-gray-200 rounded-xl
@@ -532,18 +582,23 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }) {
                 outline-none text-mtn-black text-sm mb-1"
             />
             {localDigits.length > 0 && (
-              <p className="text-xs text-gray-400 mb-1">
-                Full number:{" "}
-                <span className="font-bold text-mtn-black font-mono">
-                  {buildFullPhone(localPhone)}
-                </span>
-              </p>
-            )}
-            {localDigits.length === MAX_PHONE_DIGITS && !isValidMTNNumber(localDigits) && (
-              <p className="text-xs text-red-500 mt-1 mb-1">
-                Please enter a valid MTN Zambia number (076, 095, 096, or 097).
-              </p>
-            )}
+  <p className="text-xs text-gray-400 mb-1">
+    Full number:{" "}
+    <span className="font-bold text-mtn-black font-mono">
+      {buildFullPhone(localPhone)}
+    </span>
+  </p>
+)}
+{localDigits.length === MAX_PHONE_DIGITS + 1 && localDigits.startsWith('0') && !isValidMTNNumber(localDigits) && (
+  <p className="text-xs text-red-500 mt-1 mb-1">
+    Please enter a valid MTN Zambia number starting with 0 (0 76, 0 96, ) followed by 7 digits.
+  </p>
+)}
+{localDigits.length === MAX_PHONE_DIGITS && !isValidMTNNumber(localDigits) && (
+  <p className="text-xs text-red-500 mt-1 mb-1">
+    Please enter a valid MTN Zambia number (076, 096) followed by 7 digits.
+  </p>
+)}
 
             <p className="text-xs text-gray-400 mb-4">
               A payment prompt will be sent to your MTN MoMo number.

@@ -17,8 +17,12 @@ const labelColor = (label) => {
 };
 
 function pickSix(bundles) {
-  const bestValue = bundles.filter(b => b.label === "Best Value");
-  const rest      = bundles.filter(b => b.label !== "Best Value");
+ 
+  const sorted = [...bundles].sort((a, b) => a.sizeMb - b.sizeMb);
+
+  const bestValue = sorted.filter(b => b.label === "Best Value");
+  const rest      = sorted.filter(b => b.label !== "Best Value");
+
   return [...bestValue, ...rest].slice(0, 6);
 }
 
