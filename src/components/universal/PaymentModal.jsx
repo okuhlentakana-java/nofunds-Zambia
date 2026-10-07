@@ -352,18 +352,21 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }) {
               </svg>
             </div>
             <h3 className="text-xl font-extrabold text-mtn-black mb-1">Payment Successful!</h3>
-            <p className="text-gray-400 mb-4">Your {item.name} has been activated.</p>
+            <p className="text-gray-400 mb-4">
+              Your {item.components?.length ? item.components.join(" + ") : item.name} has been activated.
+            </p>
 
             <div className="bg-gray-50 rounded-xl p-4 text-left mb-5 space-y-2">
               {[
-                ["Bundle", item.name],
+                ["Bundle", item.components?.length ? item.components.join(" + ") : item.name],
+                ...(item.description ? [["Details", item.description]] : []),
                 ["Amount Paid", formatPrice(item.price)],
                 ["Method", selected?.label],
                 ["Phone", buildFullPhone(localPhone)],
               ].map(([label, val]) => (
-                <div key={label} className="flex justify-between">
+                <div key={label} className="flex justify-between gap-4">
                   <span className="text-gray-400 text-sm">{label}</span>
-                  <span className="font-semibold text-mtn-black text-sm">{val}</span>
+                  <span className="font-semibold text-mtn-black text-sm text-right">{val}</span>
                 </div>
               ))}
             </div>
@@ -438,7 +441,9 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }) {
       </p>
       <div className="flex justify-between items-center">
         <div>
-          <p className="font-semibold text-mtn-black">{item.name}</p>
+          <p className="font-semibold text-mtn-black">
+            {item.components?.length ? item.components.join(" + ") : item.name}
+          </p>
           <p className="text-xs text-gray-400">{item.validity}</p>
         </div>
         <p className="font-extrabold text-mtn-black">{formatPrice(item.price)}</p>
@@ -495,7 +500,9 @@ export default function PaymentModal({ isOpen, onClose, item, onSuccess }) {
             <div className="bg-mtn-black rounded-xl p-4 mb-5">
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="font-bold text-white">{item.name}</p>
+                  <p className="font-bold text-white">
+                    {item.components?.length ? item.components.join(" + ") : item.name}
+                  </p>
                   <p className="text-xs text-white/50 mt-1">{item.validity}</p>
                 </div>
                 <p className="font-extrabold text-mtn-yellow">{formatPrice(item.price)}</p>

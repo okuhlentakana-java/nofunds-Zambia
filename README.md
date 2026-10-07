@@ -32,7 +32,9 @@ GTM container is wired in `index.html` (head snippet + body noscript iframe). Ev
 - `page_view`, `cta_click` — entry & navigation
 - `view_item_list`, `select_item`, `begin_checkout`, `purchase` — bundle/airtime ecommerce funnel
 - `ad_impression`, `ad_click` — Tangazo ad zones (IntersectionObserver-based)
-- `service_action`, `advertise_with_us_click` (→ `generate_lead`), `support_contact_click`, `faq_open` — engagement zones
+- `service_action`, `support_contact_click`, `faq_open` — engagement zones
+
+The advertising enquiry form opens the user's default email app with a prefilled message. It does not emit a lead-conversion event because the app cannot confirm that the email was sent.
 
 No PII (MSISDN, OTP, name, email, card number) is ever pushed to the `dataLayer`.
 

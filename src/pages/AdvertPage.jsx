@@ -1,16 +1,11 @@
 import { useState } from "react";
-import { BACKEND_URL } from "../api";
+
+const ADVERTISING_EMAIL = "adzone@nofundMTN.domain";
 
 const SendIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <line x1="22" y1="2" x2="11" y2="13" />
     <polygon points="22 2 15 22 11 13 2 9 22 2" />
-  </svg>
-);
-
-const CheckIcon = () => (
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="20 6 9 17 4 12" />
   </svg>
 );
 
@@ -41,8 +36,6 @@ export default function AdvertPage() {
     phone: "",
     campaign: "",
   });
-  const [submitted, setSubmitted] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
   const validate = () => {
@@ -59,57 +52,30 @@ export default function AdvertPage() {
     setErrors((er) => ({ ...er, [field]: undefined }));
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     const e = validate();
     if (Object.keys(e).length) {
       setErrors(e);
       return;
     }
-    setLoading(true);
-    try {
-      const res = await fetch(`${BACKEND_URL}/api/adverts/enquiry`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "ngrok-skip-browser-warning": "true",
-        },
-        body: JSON.stringify({
-          fullName:    form.fullName,
-          companyName: form.companyName,
-          email:       form.email,
-          phone:       form.phone,
-          campaign:    form.campaign,
-        }),
-      });
-      if (!res.ok) throw new Error("Server error");
-      setSubmitted(true);
-
-      // advertise_with_us_click -> GA4 generate_lead, fires only on a
-      // successful enquiry submit. NO fullName/email/phone in the push — PII.
-      window.dataLayer = window.dataLayer || [];
-      window.dataLayer.push({
-        event: "advertise_with_us_click",
-        source_zone: "ad_zones",
-      });
-    // eslint-disable-next-line no-unused-vars
-    } catch (err) {
-      setErrors({ submit: "Failed to submit. Please try again." });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDone = () => {
-    setSubmitted(false);
-    setForm({ fullName: "", companyName: "", email: "", phone: "", campaign: "" });
-    setErrors({});
+    const subject = `Advertising enquiry from ${form.companyName}`;
+    const body = [
+      `Full name: ${form.fullName}`,
+      `Company: ${form.companyName}`,
+      `Email: ${form.email}`,
+      `Phone: ${form.phone}`,
+      `Campaign interest: ${form.campaign || "Not provided"}`,
+    ].join("\n");
+    window.location.href = `mailto:${ADVERTISING_EMAIL}?${new URLSearchParams({
+      subject,
+      body,
+    }).toString()}`;
   };
 
   return (
     <div className="min-h-screen bg-gray-100 py-6">
       <div className="container mx-auto px-4 max-w-3xl">
-        {!submitted ? (
-          <>
+        <>
             {/* Hero Banner */}
             <div className="relative overflow-hidden rounded-2xl bg-mtn-black p-6 mb-6 text-white">
               <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-white/5" />
@@ -132,7 +98,12 @@ export default function AdvertPage() {
               <div className="bg-white rounded-xl p-5 flex flex-col items-center text-center shadow-sm">
                 <MailIcon className="text-mtn-yellow" />
                 <div className="text-xs text-gray-400 mt-2">Email Us</div>
-                <div className="font-semibold text-mtn-yellow text-xs break-all">adzone@nofundMTN.domain</div>
+                <a
+                  href={`mailto:${ADVERTISING_EMAIL}`}
+                  className="font-semibold text-mtn-yellow text-xs break-all hover:underline"
+                >
+                  {ADVERTISING_EMAIL}
+                </a>
               </div>
             </div>
 
@@ -217,48 +188,15 @@ export default function AdvertPage() {
                     className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-1 focus:ring-mtn-yellow focus:border-mtn-yellow transition resize-y"
                   />
                 </div>
-                {errors.submit && (
-              <p className="text-red-500 text-sm text-center">{errors.submit}</p>
-            )}
                 <button
                   onClick={handleSubmit}
-                  disabled={loading}
-                  className={`w-full py-3 rounded-xl font-bold text-mtn-black flex items-center justify-center gap-2 transition ${
-                    loading
-                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                      : "bg-mtn-yellow hover:bg-mtn-black hover:text-white"
-                  }`}
+                  className="w-full py-3 rounded-xl font-bold text-mtn-black flex items-center justify-center gap-2 transition bg-mtn-yellow hover:bg-mtn-black hover:text-white"
                 >
-                  {loading ? (
-                    "Submitting…"
-                  ) : (
-                    <>
-                      <SendIcon /> Submit Enquiry
-                    </>
-                  )}
+                  <SendIcon /> Email Enquiry
                 </button>
               </div>
             </div>
-          </>
-        ) : (
-          /* Success State */
-          <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6">
-            <div className="w-20 h-20 bg-mtn-yellow rounded-full flex items-center justify-center mb-4">
-              <CheckIcon />
-            </div>
-            <h2 className="text-2xl font-extrabold text-mtn-black mb-2">Enquiry Submitted</h2>
-            <p className="text-gray-400 max-w-xs mb-6">
-              Our team will contact you within 24 hours to discuss your advertising needs.
-            </p>
-            
-            <button
-              onClick={handleDone}
-              className="bg-mtn-yellow text-mtn-black px-8 py-3 rounded-xl font-bold hover:bg-mtn-black hover:text-mtn-yellow transition"
-            >
-              Done
-            </button>
-          </div>
-        )}
+        </>
       </div>
     </div>
   );

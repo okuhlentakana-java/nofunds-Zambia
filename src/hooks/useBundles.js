@@ -76,7 +76,10 @@ export function useBundlesByCategory(category) {
   });
 
   // Filter client‑side by category (case‑insensitive)
-  const filtered = allBundles.filter(b => b.category?.toLowerCase() === category.toLowerCase());
+  const normalizedCategory = category.toLowerCase();
+  const filtered = allBundles.filter(b =>
+    (b.categories ?? [b.category?.toLowerCase()]).includes(normalizedCategory)
+  );
 
   return { bundles: filtered, loading, error };
 }
