@@ -2,9 +2,14 @@
 
 // ─── Base URLs ────────────────────────────────────────────────────────────────
 export const BASE_URL = import.meta.env.VITE_BASE_URL;
-export const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-export const AD_BASE_URL = import.meta.env.VITE_AD_BASE_URL;
-export const AD_API_KEY = import.meta.env.VITE_AD_API_KEY;
+export const AD_BASE_URL = import.meta.env.VITE_AD_BASE_URL || "";
+export const AD_API_KEY = import.meta.env.VITE_AD_API_KEY || "";
+export const AD_PLACEMENTS = {
+	primary: import.meta.env.VITE_AD_PRIMARY_PLACEMENT ,
+	square: import.meta.env.VITE_AD_SQUARE_PLACEMENT ,
+	footer: import.meta.env.VITE_AD_FOOTER_PLACEMENT ,
+};
+
 
 // ─── Endpoints ────────────────────────────────────────────────────────────────
 export const ENDPOINTS = {
@@ -31,8 +36,6 @@ export const ENDPOINTS = {
   // EcoCash webhook (inbound — called by EcoCash, not by frontend directly)
   ecocashWebhook:       `${BASE_URL}/api/v1/webhooks/payments/ecocash`,
 
-  // PayFast — your Spring Boot backend
-  payfastInitiate:      `${BACKEND_URL}/api/payment/initiate`,
 };
 
 // ─── Central fetch wrapper ────────────────────────────────────────────────────

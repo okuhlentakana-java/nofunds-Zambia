@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import PaymentModal from "../components/universal/PaymentModal";
+import { PrimaryBanner } from "../components/ads/AdSlots";
 import { useBundlesByCategory } from "../hooks/useBundles";
-import { useTangazoAd } from "../hooks/useTangazoAd";
 
 // ── Icons ────────────────────────────────────────────────────────────────────
 const BoltIcon = ({ size = 16, color = "#001A70" }) => (
@@ -52,7 +52,6 @@ const labelColor = (label) => {
 
 // ── Main Component ───────────────────────────────────────────────────────────
 export default function HotOffers() {
-  const { isEmpty } = useTangazoAd("primary_banner");
   const navigate = useNavigate();
   const [paymentBundle, setPaymentBundle] = useState(null);
 
@@ -200,11 +199,7 @@ const socialDeals = [
 
         {/* Hero Banner */}
         <div className="rounded-2xl overflow-hidden mb-6 max-w-screen-sm mx-auto">
-          {isEmpty ? (
-            <img src="/mtn-fibre-inline-1080x360 2.jpg" alt="MTN Promo" className="w-full h-auto block" />
-          ) : (
-            <div data-tangazo-zone="primary_banner" />
-          )}
+          <PrimaryBanner />
         </div>
 
         {/* ── Best Value Deals ─────────────────────────────────────────────── */}
