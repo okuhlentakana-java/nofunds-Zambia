@@ -49,6 +49,7 @@ export default function Bundles() {
     ? {
         name: selectedBundle.name,
         description: selectedBundle.description,
+        components: selectedBundle.components,
         price: selectedBundle.price,
         validity: selectedBundle.validity,
         code: selectedBundle.code, 
@@ -120,9 +121,17 @@ export default function Bundles() {
               </span>
 
               {/* Bundle Info */}
-              <div className="mt-1 text-sm font-bold leading-tight text-gray-900">
-                {bundle.name}
-              </div>
+              {bundle.components?.length > 0 ? (
+                <div className="mt-1 text-xs font-bold leading-snug text-gray-900">
+                  {bundle.components.map((component) => (
+                    <div key={component}>{component}</div>
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-1 text-sm font-bold leading-tight text-gray-900">
+                  {bundle.name}
+                </div>
+              )}
 
               <p className="text-[10px] text-gray-400 leading-tight">
                 {bundle.validity}

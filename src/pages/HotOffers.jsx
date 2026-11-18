@@ -112,6 +112,7 @@ const socialDeals = [
     setPaymentBundle({
       name: bundle.name,
       description: bundle.description,
+      components: bundle.components,
       price: bundle.price,
       validity: bundle.validity,
       code: bundle.code,
@@ -131,9 +132,17 @@ const socialDeals = [
       </span>
 
       {/* Bundle name */}
-      <div className="mt-1 text-sm font-bold leading-tight text-gray-900">
-        {bundle.name}
-      </div>
+      {bundle.components?.length > 0 ? (
+        <div className="mt-1 text-xs font-bold leading-snug text-gray-900">
+          {bundle.components.map((component) => (
+            <div key={component}>{component}</div>
+          ))}
+        </div>
+      ) : (
+        <div className="mt-1 text-sm font-bold leading-tight text-gray-900">
+          {bundle.name}
+        </div>
+      )}
 
       {/* Validity */}
       <p className="text-[10px] text-gray-400 leading-tight">

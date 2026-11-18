@@ -1,14 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { normalizeBundle } from "./bundleHelpers.js";
+import { compareBundles, normalizeBundle } from "./bundleHelpers.js";
 
-const bundle = (description, code = "5MB", category = "combo") =>
+const bundle = (description, code = "5MB", category = "combo", price = 2) =>
   normalizeBundle({
     code,
     category,
     currency: "K",
     description,
-    price: 2,
+    price,
   });
 
 test("keeps combo bundles in Combo and adds SMS membership from quantities", () => {
@@ -33,6 +33,21 @@ test("parses every combo part from the description", () => {
   assert.deepEqual(bundle("2GB daily bundle", "2GB", "data").components, []);
 });
 
+test("shows streaming allowances for data bundles, including unlimited streaming", () => {
+  assert.deepEqual(
+    bundle("2GB + 650MB streaming weekly bundle", "2GB", "data").components,
+    ["2 GB", "650 MB streaming"]
+  );
+  assert.deepEqual(
+    bundle("8.5GB + 5.5GB streaming monthly bundle", "85GB", "data").components,
+    ["8.5 GB", "5.5 GB streaming"]
+  );
+  assert.deepEqual(
+    bundle("40GB + Unlimited Streaming monthly bundle", "40GB", "data").components,
+    ["40 GB", "Unlimited Streaming"]
+  );
+});
+
 test("omits trailing validity and group text from combo components", () => {
   assert.deepEqual(
     bundle("5Mins + 5MB + 5SMS daily bundle 1Zed Voice").components,
@@ -46,6 +61,49 @@ test("omits trailing validity and group text from combo components", () => {
 
 test("shows Daily as the validity for daily bundles", () => {
   assert.equal(bundle("110MB daily bundle", "110MB", "data").validity, "Daily");
+});
+
+test("parses hourly and non-expiring bundle validity", () => {
+  const twoHour = bundle("2GB 2hrs bundle 1Zed Data", "2GB", "data");
+  const fiveHour = bundle("6GB 5hrs bundle 1Zed Data", "6GB", "data");
+  const noExpiry = bundle("3GB non-expiry bundle 1Zed Data", "3GB", "data");
+
+  assert.equal(twoHour.subCategory, "hourly");
+  assert.equal(twoHour.validity, "2 hours");
+  assert.equal(twoHour.bundleGroup, "1zed-data");
+  assert.equal(fiveHour.subCategory, "hourly");
+  assert.equal(fiveHour.validity, "5 hours");
+  assert.equal(noExpiry.subCategory, "non-expiry");
+  assert.equal(noExpiry.validity, "No expiry");
+});
+
+test("sorts voice bundles by minutes before data-size-sorted bundles without voice", () => {
+  const bundles = [
+    bundle("2GB weekly bundle", "2GB", "data"),
+    bundle("45Mins + 45MB + 45SMS daily bundle", "45MB"),
+    bundle("5Mins + 5MB + 5SMS daily bundle", "5MB"),
+    bundle("1GB weekly bundle", "1GB", "data"),
+    bundle("12Mins + 12MB + 12SMS weekly bundle", "12MB"),
+  ];
+
+  assert.deepEqual(bundles.sort(compareBundles).map(({ voiceMinutes, sizeMb }) =>
+    voiceMinutes ?? sizeMb
+  ), [5, 12, 45, 1024, 2048]);
+});
+
+test("sorts bundles by ascending price before applying voice and data ordering", () => {
+  const bundles = [
+    bundle("45Mins + 45MB + 45SMS daily bundle", "45MB", "combo", 10),
+    bundle("2GB daily bundle", "2GB", "data", 5),
+    bundle("12Mins + 12MB + 12SMS daily bundle", "12MB", "combo", 5),
+    bundle("5Mins + 5MB + 5SMS daily bundle", "5MB", "combo", 5),
+    bundle("1GB daily bundle", "1GB", "data", 5),
+  ];
+
+  assert.deepEqual(
+    bundles.sort(compareBundles).map(({ code }) => code),
+    ["5MB", "12MB", "1GB", "2GB", "45MB"]
+  );
 });
 
 test("adds Voice membership when combo description has minutes", () => {

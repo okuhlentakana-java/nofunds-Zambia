@@ -1,16 +1,18 @@
 // src/api/bundleHelpers.js
 
 const VALIDITY_MAP = {
-  daily:   "Daily",
-  "3-day": "3 days",
-  weekly:  "7 days",
-  monthly: "30 days",
+  daily:        "Daily",
+  hourly:       "Hourly",
+  "3-day":      "3 days",
+  weekly:       "7 days",
+  monthly:      "30 days",
+  "non-expiry": "No expiry",
 };
 
 export const BUNDLE_GROUPS = [
+  { id: "mixo-mixo", label: "Mixo Mixo" },
   { id: "1zed-data", label: "1Zed Data" },
   { id: "1zed-voice", label: "1Zed Voice" },
-  { id: "mixo-mixo", label: "Mixo Mixo" },
   { id: "unik-pulse-data", label: "Unik and Pulse Data" },
   { id: "unik-pulse-combo", label: "Unik and Pulse combo" },
 ];
@@ -31,10 +33,20 @@ function parseBundleGroup(description = "") {
  */
 function parseSubCategory(description = "") {
   const d = description.toLowerCase();
+  if (/\bnon[\s-]?expiry\b|\bno[\s-]?expiry\b/.test(d)) return "non-expiry";
+  if (/\b\d+[\s-]*(?:hours?|hrs?)\b/.test(d)) return "hourly";
   if (d.includes("3-day") || d.includes("3 day")) return "3-day";
   if (d.includes("weekly"))  return "weekly";
   if (d.includes("monthly")) return "monthly";
   return "daily"; // default
+}
+
+function getValidity(description, subCategory) {
+  if (subCategory === "hourly") {
+    const hours = description.match(/\b(\d+)[\s-]*(?:hours?|hrs?)\b/i);
+    if (hours) return `${Number(hours[1])} hours`;
+  }
+  return VALIDITY_MAP[subCategory] ?? subCategory;
 }
 
 /**
@@ -75,7 +87,7 @@ function getCategories(category, code = "", description = "") {
  */
 function parseComponents(description = "") {
   const cleaned = description.replace(
-    /\s+(?:daily|weekly|monthly|3[- ]day|non-expiry)\s+bundle\b.*$/i,
+    /\s+(?:daily|weekly|monthly|3[- ]day|\d+[\s-]*(?:hours?|hrs?)|non[- ]expiry)\s+bundle\b.*$/i,
     ""
   );
   return cleaned
@@ -142,6 +154,27 @@ function parseSizeMb(code = "") {
   return unit.toUpperCase() === "GB" ? n * 1024 : n;
 }
 
+function parseVoiceMinutes(description = "") {
+  const match = description.match(/\b(\d+(?:\.\d+)?)\s*mins?\b/i);
+  return match ? parseFloat(match[1]) : null;
+}
+
+export function compareBundles(a, b) {
+  const priceDifference =
+    parseFloat(String(a.price).replace(/[^0-9.]/g, "")) -
+    parseFloat(String(b.price).replace(/[^0-9.]/g, ""));
+  if (priceDifference !== 0) return priceDifference;
+
+  const aHasVoice = a.voiceMinutes != null;
+  const bHasVoice = b.voiceMinutes != null;
+
+  if (aHasVoice !== bHasVoice) return aHasVoice ? -1 : 1;
+  if (aHasVoice && a.voiceMinutes !== b.voiceMinutes) {
+    return a.voiceMinutes - b.voiceMinutes;
+  }
+  return a.sizeMb - b.sizeMb;
+}
+
 /**
  * Transforms a raw ApiBundle into the shape BundlesPage cards expect.
  */
@@ -158,15 +191,20 @@ export function normalizeBundle(b) {
     category,
     categories,
     bundleGroup,
-    components:  category === "combo" ? parseComponents(b.description) : [],
+    components:
+      category === "combo" ||
+      (category === "data" && /\bstreaming\b/i.test(b.description))
+        ? parseComponents(b.description)
+        : [],
     subCategory,
     name:        parseName(b.code, b.description),
     description: b.description,
-    validity:    VALIDITY_MAP[subCategory] ?? subCategory,
+    validity:    getValidity(b.description, subCategory),
     price:       `${b.currency} ${priceNum.toFixed(2)}`,
     label:       getLabel(category, subCategory),
     badge:       category.charAt(0).toUpperCase() + category.slice(1),
     active:      b.active,
+    voiceMinutes: parseVoiceMinutes(b.description),
     sizeMb:      parseSizeMb(b.code),   // used for sorting
   };
 }

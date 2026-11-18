@@ -91,12 +91,7 @@ export default function UniversalBanner() {
             data-tangazo-zone={ZONE}
           />
         )}
-        <div className="h-0.5 bg-gray-300">
-          <div
-            className="h-0.5 bg-gray-500 transition-all duration-100 ease-linear"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
+       
       </div>
     </div>
   );
